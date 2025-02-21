@@ -1,0 +1,471 @@
+<Ui
+    xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd"
+>
+	<Script File="PlayerFrameCustom.lua" />
+	<Button
+        name="PlayerFrameCustom"
+        inherits="SecureUnitButtonTemplate"
+        virtual="true"
+        movable="true"
+        enableMouse="true"
+    >
+		<!-- <Size x="185" y="50" /> -->
+		<!-- <Anchors>
+			<Anchor
+                point="TOPLEFT"
+                relativeTo="UIParent"
+                relativePoint="TOPLEFT"
+                x="-19"
+                y="-4"
+            />
+		</Anchors> -->
+  		<Layers>
+ 			<Layer level="BACKGROUND">
+				<Texture name="$parentBackground">
+    				<!-- <Size x="119" y="16" /> -->
+    				<Color r="0" g="1" b="0" a="1" />
+    				<!-- <Anchors>
+        				<Anchor point="TOP" relativePoints="TOP" x="3" y="-2" />
+    				</Anchors> -->
+				</Texture>
+ 			</Layer>
+  		</Layers>
+  		<Layers>
+ 			<Layer level="BACKGROUND">
+				<Texture name="$parentDebugBackground" hidden="false">
+    				<!-- <Size x="185" y="50" /> -->
+                    <Color r="1" g="0" b="0" a="1" />
+    				<!-- <Anchors>
+        				<Anchor point="TOPLEFT" relativePoints="TOPLEFT" x="0" y="0" />
+    				</Anchors> -->
+				</Texture>
+ 			</Layer>
+  		</Layers>
+		<Frames>
+			<!-- Portrait -->
+			<Frame name="$parentPortrait" frameStrata="LOW" frameLevel="1">
+				<!-- <Size x="60" y="60" /> -->
+				<!-- <Anchors>
+					<Anchor point="TOPLEFT" x="-19" y="8" />
+				</Anchors> -->
+				<Layers>
+					<Layer level="BORDER">
+						<Texture name="$parentTexture">
+							<!-- <TexCoords left="0" right="1" top="0" bottom="1" /> -->
+							<!-- <Anchors>
+								<Anchor point="TOPLEFT" x="1" y="-1" />
+								<Anchor point="BOTTOMRIGHT" x="-1" y="1" />
+							</Anchors> -->
+						</Texture>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Frame
+                name="$parentReadyCheck"
+                inherits="ReadyCheckStatusTemplate"
+                hidden="true"
+                frameStrata="LOW"
+                frameLevel="3"
+            >
+    			<!-- <Size>
+                    <AbsDimension x="40" y="40" />
+    			</Size>
+    			<Anchors>
+         			<Anchor
+                        point="CENTER"
+                        relativePoint="CENTER"
+                        relativeTo="PlayerFrameCustomPortrait"
+                    >
+             			<Offset>
+                            <AbsDimension x="0" y="0" />
+             			</Offset>
+         			</Anchor>
+    			</Anchors> -->
+			</Frame>
+			<Frame name="$parentGroupIndicatorParent" hidden="true">
+				<!-- <Size>
+					<AbsDimension x="10" y="16" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+						<Offset>
+							<AbsDimension x="48" y="3" />
+						</Offset>
+					</Anchor>
+				</Anchors> -->
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentGroupIndicatorLeft">
+							<!-- <Size>
+								<AbsDimension x="24" y="16" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" />
+							</Anchors>
+							<TexCoords left="0" right="0.1875" top="0" bottom="1" /> -->
+						</Texture>
+						<Texture name="$parentGroupIndicatorRight">
+							<!-- <Size>
+								<AbsDimension x="24" y="16" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPRIGHT" />
+							</Anchors>
+							<TexCoords left="0.53125" right="0.71875" top="0" bottom="1" /> -->
+						</Texture>
+						<Texture name="$parentGroupIndicatorMiddle">
+							<!-- <Size>
+								<AbsDimension x="0" y="16" />
+							</Size>
+							<Anchors>
+								<Anchor
+                                    point="LEFT"
+                                    relativeTo="$parentGroupIndicatorLeft"
+                                    relativePoint="RIGHT"
+                                />
+								<Anchor
+                                    point="RIGHT"
+                                    relativeTo="$parentGroupIndicatorRight"
+                                    relativePoint="LEFT"
+                                />
+							</Anchors>
+							<TexCoords left="0.1875" right="0.53125" top="0" bottom="1" /> -->
+						</Texture>
+						<FontString name="$parentGroupIndicatorText" inherits="GameFontHighlightSmall">
+							<!-- <Anchors>
+								<Anchor point="LEFT">
+									<Offset>
+										<AbsDimension x="20" y="-2" />
+									</Offset>
+								</Anchor>
+							</Anchors> -->
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<!-- Name Bar -->
+			<Frame name="$parentNameBar" frameStrata="LOW" frameLevel="1" hidden="true">
+                <!-- <Size x="119" y="16" /> -->
+                <!-- <Anchors>
+                    <Anchor point="TOPLEFT" x="5" y="-1" />
+                </Anchors> -->
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentTexture">
+                            <Color r="1" g="0" b="0" a="1" />
+                            <!-- <Anchors>
+                                <Anchor point="TOPLEFT" />
+                                <Anchor point="BOTTOMRIGHT" />
+                            </Anchors> -->
+                        </Texture>
+                    </Layer>
+                </Layers>
+            </Frame>
+			<!-- Health Bar -->
+ 			<StatusBar name="$parentHealthBar">
+				<!-- <Size x="119" y="12" /> -->
+				<!-- <Anchors>
+   					<Anchor point="TOPLEFT" x="44" y="-18" />
+				</Anchors> -->
+				<Layers>
+   					<Layer level="BACKGROUND">
+  						<Texture name="$parentBackground">
+                            <Color r="0" g="1" b="0" a="1" />
+ 							<!-- <Color r="0.33" g="0.59" b="0.33" a="0.9" /> -->
+ 							<!-- <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+ 							</Anchors> -->
+  						</Texture>
+   					</Layer>
+   					<Layer level="ARTWORK">
+  						<FontString name="$parentText" inherits="GameFontNormal" hidden="true">
+ 							<!-- <Anchors>
+								<Anchor point="CENTER" />
+ 							</Anchors> -->
+  						</FontString>
+   					</Layer>
+    				<Layer level="ARTWORK">
+       					<FontString name="$parentNameText" inherits="GameFontNormalSmall">
+           					<!-- <Anchors>
+          						<Anchor point="TOP" x="-12" y="-4" />
+           					</Anchors> -->
+        				</FontString>
+                    </Layer>
+				</Layers>
+				<BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
+				<!-- <BarColor r="0" g="1.00" b="0" /> -->
+ 			</StatusBar>
+			<!-- Power Bar -->
+			<StatusBar name="$parentPowerBar">
+				<!-- <Size x="119" y="12" /> -->
+				<!-- <Anchors>
+					<Anchor point="TOPLEFT" x="44" y="-29" />
+				</Anchors> -->
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentBackground">
+				        	<Color r="0" g="1" b="0" a="1" />
+							<!-- <Color r="0" g="0" b="0" a="0.5" /> -->
+							<!-- <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							</Anchors> -->
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
+						<FontString name="$parentText" inherits="GameFontNormal">
+							<!-- <Anchors>
+								<Anchor point="CENTER" />
+							</Anchors> -->
+						</FontString>
+					</Layer>
+				</Layers>
+				<BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
+			</StatusBar>
+			<Frame name="$parentTextureFrame" frameStrata="MEDIUM" frameLevel="5">
+    			<!-- <Anchors>
+    				<Anchor point="CENTER" />
+    			</Anchors>
+                <Size x="185" y="50" /> -->
+				<Layers>
+				    <!-- Main Frame Texture -->
+					<Layer level="BACKGROUND">
+						<Texture
+                            name="$parentTexture"
+                            file="Interface\TargetingFrame\UI-TargetingFrame"
+                        >
+							<!-- <TexCoords left="1" right="0" top="0" bottom="1" /> -->
+							<!-- <Anchors>
+								<Anchor
+                                    point="TOPLEFT"
+                                    relativeTo="PlayerFrameCustom"
+                                    relativePoint="TOPLEFT"
+                                    x="-63"
+                                    y="22"
+                                />
+							</Anchors> -->
+						</Texture>
+					</Layer>
+					<!-- Portrait Border -->
+					<Layer level="BORDER">
+						<Texture
+                            name="$parentPortraitBorderTexture"
+                            file="Interface\AddOns\NicerFrames\Textures\UnitFrames\Class-Circle-Cutout"
+                        >
+							<!-- <Size x="63" y="63" /> -->
+							<!-- <TexCoords left="1" right="0" top="0" bottom="1" /> -->
+							<!-- <Anchors>
+								<Anchor
+                                    point="TOPLEFT"
+                                    relativeTo="PlayerFrameCustom"
+                                    relativePoint="TOPLEFT"
+                                    x="-21"
+                                    y="10"
+                                />
+							</Anchors> -->
+							<Color r="1.00" g="0.96" b="0.41" />
+						</Texture>
+					</Layer>
+					<!-- Level Text -->
+    				<Layer level="OVERLAY">
+    					<FontString name="$parentLevelText" inherits="GameFontNormalSmall">
+    						<!-- <Anchors>
+    							<Anchor
+                                    point="CENTER"
+                                    relativeTo="PlayerFrameCustom"
+                                    relativePoint="CENTER"
+                                    x="-126"
+                                    y="6"
+                                />
+    						</Anchors> -->
+    					</FontString>
+    				</Layer>
+                    <!-- Master Looter -->
+              		<Layer level="OVERLAY">
+                        <Texture
+                            name="$parentMasterIcon"
+                            file="Interface\GroupFrame\UI-Group-MasterLooter"
+                            hidden="true"
+                        >
+							<!-- <Size>
+								<AbsDimension x="13" y="13" />
+							</Size> -->
+							<!-- <Anchors>
+								<Anchor point="TOPLEFT" relativeTo="PlayerFrameCustom">
+									<Offset>
+										<AbsDimension x="10" y="14" />
+									</Offset>
+								</Anchor>
+							</Anchors> -->
+						</Texture>
+					</Layer>
+                    <!-- Leader Icon -->
+                    <Layer level="OVERLAY">
+                        <Texture
+                            name="$parentLeaderIcon"
+                            file="Interface\GroupFrame\UI-Group-LeaderIcon"
+                            hidden="true"
+                        >
+							<!-- <Size x="16" y="16" /> -->
+							<!-- <Anchors>
+    							<Anchor point="TOPLEFT" relativeTo="PlayerFrameCustom">
+     				    			<Offset>
+        								<AbsDimension x="-2" y="15" />
+     				    			</Offset>
+    							</Anchor>
+							</Anchors> -->
+						</Texture>
+                    </Layer>
+                    <!-- Rest Icon -->
+                    <Layer level="OVERLAY">
+                        <Texture
+                            name="$parentRestIcon"
+                            file="Interface\CharacterFrame\UI-StateIcon"
+                            hidden="true"
+                        >
+							<!-- <Size x="31" y="33" />
+							<Anchors>
+						    	<Anchor point="TOPLEFT" relativeTo="PlayerFrameCustom">
+						        	<Offset x="-10" y="-26" />
+						    	</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.5" top="0" bottom="0.421875" /> -->
+						</Texture>
+					</Layer>
+					<!-- Combat Icon -->
+                    <Layer level="OVERLAY">
+                        <Texture
+                            name="$parentCombatIcon"
+                            file="Interface\CharacterFrame\UI-StateIcon"
+                            hidden="true"
+                        >
+      						<!-- <Size>
+     							<AbsDimension x="23" y="23" />
+      						</Size>
+      						<Anchors>
+     							<Anchor point="TOPLEFT" relativeTo="PlayerFrameCustom">
+    								<Offset>
+       									<AbsDimension x="-5" y="-32" />
+    								</Offset>
+     							</Anchor>
+      						</Anchors> -->
+        		    		<!-- <TexCoords left="0.5" right="1.0" top="0" bottom="0.5" /> -->
+    					</Texture>
+                    </Layer>
+                    <!-- PVP Icon -->
+                    <Layer level="OVERLAY">
+                        <Texture
+                            name="$parentPVPIcon"
+                            file="Interface\TargetingFrame\UI-PVP-FFA"
+                            hidden="true"
+                        >
+							<!-- <Size>
+								<AbsDimension x="50" y="50" />
+							</Size> -->
+							<!-- <Anchors>
+								<Anchor point="TOPLEFT" relativeTo="PlayerFrameCustom">
+									<Offset>
+										<AbsDimension x="-22" y="-3" />
+									</Offset>
+								</Anchor>
+							</Anchors> -->
+						</Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <Texture
+                            name="$parentRaidTargetIcon"
+                            file="Interface\TargetingFrame\UI-RaidTargetingIcons"
+                            hidden="true"
+                        >
+							<!-- <Size>
+								<AbsDimension x="26" y="26" />
+							</Size> -->
+							<!-- <Anchors>
+								<Anchor point="CENTER" relativePoint="TOPRIGHT" relativeTo="PlayerFrameCustom">
+									<Offset>
+										<AbsDimension x="9" y="10" />
+									</Offset>
+								</Anchor>
+							</Anchors> -->
+						</Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+						<FontString
+                            name="$parentHitIndicator"
+                            hidden="true"
+                            inherits="NumberFontNormalHuge"
+                        >
+							<!-- <Anchors>
+								<Anchor point="CENTER">
+									<Offset>
+										<AbsDimension x="-64" y="4" />
+									</Offset>
+								</Anchor>
+							</Anchors> -->
+						</FontString>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture
+                            name="$parentStatusTexture"
+                            file="Interface\CharacterFrame\UI-Player-Status"
+                            hidden="true"
+                            alphaMode="ADD"
+                        >
+                            <!-- <Size>
+                                <AbsDimension x="190" y="66" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER">
+									<Offset>
+										<AbsDimension x="-9" y="7" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.74609375" top="0" bottom="0.53125" /> -->
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture
+                            name="$parentRestGlow"
+                            file="Interface\CharacterFrame\UI-StateIcon"
+                            hidden="true"
+                            alphaMode="ADD"
+                        >
+							<!-- <Size>
+								<AbsDimension x="32" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" />
+							</Anchors>
+							<TexCoords left="0" right="0.5" top="0.5" bottom="1.0" /> -->
+						</Texture>
+					</Layer>
+					<!-- <Layer level="OVERLAY">
+						<Texture
+                            name="$parentRestIconGlow"
+                            file="Interface\CharacterFrame\UI-StateIcon"
+                            hidden="false"
+                            alphaMode="ADD"
+                        >
+							<Size>
+								<AbsDimension x="32" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" />
+							</Anchors>
+							<TexCoords left="0" right="0.5" top="0.5" bottom="1.0" />
+    					</Texture>
+					</Layer> -->
+                </Layers>
+			</Frame>
+		</Frames>
+		<!-- <Scripts>
+			<OnLoad function="PlayerFrameCustom_OnLoad" />
+			<OnEvent function="PlayerFrameCustom_OnEvent" />
+			<OnClick function="PlayerFrameCustom_OnClick" />
+		</Scripts> -->
+	</Button>
+</Ui>

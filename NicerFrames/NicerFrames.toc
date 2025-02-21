@@ -1,0 +1,9 @@
+## Interface: 50405
+## Title: NicerFrames
+## Notes: Nicer UnitFrames
+## Author: gitHabbe
+## Version: 0.0.1
+## SavedVariables: NicerFrames_DB
+
+embeds.xml
+imports.xml

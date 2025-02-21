@@ -1,0 +1,7 @@
+<Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+    <Include file="Debug.lua" />
+    <Include file="NicerFrames.xml" />
+    <Include file="PlayerFrameCustom.xml" />
+    <Include file="Database.lua" />
+    <Include file="Config.lua" />
+</Ui>
