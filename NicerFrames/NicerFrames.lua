@@ -73,6 +73,9 @@ function NicerFrames:AddOnLeaveEvent(frame)
         local resourceText = _G[resourceBar:GetName() .. "Text"]
         if resourceBar:GetScript("OnLeave") then return end
         resourceBar:EnableMouse(true)
+        resourceBar:SetScript("OnMouseDown", function(self, button)
+            frame:GetScript("OnClick")(frame, button)
+        end)
         resourceBar:SetScript("OnLeave", function(self2)
             local resourceType = UnitTextType(frame.unit)
             local maxResourceType = UnitMaxTextType(frame.unit)
@@ -183,15 +186,13 @@ function NicerFrames:CreateUnitFrame(unit, frameName, parent)
     local frame = CreateFrame("Button", frameName, parent, "PlayerFrameCustom")
     frame.unit = unit
     frame.parent = parent
+    frame:SetAttribute("unit", unit)
+    RegisterUnitWatch(frame)
 
-    if unit == "target" or unit == "pet" then
-        frame:Hide()
-    end
 
     self:AddOnLeaveEvent(frame)
 
     frame:RegisterForClicks("AnyUp")
-
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnMouseDown", function(frameObj, button)
         if not IsShiftKeyDown() then return end
@@ -252,7 +253,6 @@ function NicerFrames:READY_CHECK()
 end
 
 function NicerFrames:ROSTER_UPDATE()
-    print("ROSTER")
     PlayerFrameCustomGroupIndicatorParent:Hide()
     local numRaidMembers = GetNumRaidMembers()
     if numRaidMembers == 0 then return end
@@ -319,23 +319,25 @@ function NicerFrames:OnEnable()
     NicerFramesPlayer.statusCounter = 0;
     NicerFramesPlayer.statusSign = -1;
     NicerFramesPlayer:SetScript("OnUpdate", function(self2, elapsed) self:ApplyRestGlow(self2, elapsed) end)
+    NicerFramesPlayer:SetAttribute("*type1", "target")
     local NicerFramesTarget = self:CreateUnitFrame("target", "TargetFrameCustom", UIParent)
     NicerFramesTarget:SetScript("OnClick", PlayerFrameCustom_OnClick)
     local NicerFramesPet = self:CreateUnitFrame("pet", "PetFrameCustom", UIParent)
     NicerFramesPet:SetScript("OnClick", PlayerFrameCustom_OnClick)
     local NicerFramesTargetOfTarget = self:CreateUnitFrame("targettarget", "TargetOfTargetFrameCustom", UIParent)
-    NicerFramesTargetOfTarget:SetScript("OnClick", PlayerFrameCustom_OnClick)
+    NicerFramesTargetOfTarget:EnableMouse(true)
+    NicerFramesTargetOfTarget:SetAttribute("*type1", "target")
     PlayerFrame:Hide()
     TargetFrame:Hide()
     PetFrame:Hide()
     TargetFrame:SetScript("OnEvent", nil)
     TargetFrame:UnregisterAllEvents()
-    local function asdf(self2, event, ...)
+    local function BlizzardTargetFrameEvents(self2, event, ...)
         local arg1 = ...
         if event == "PLAYER_ENTERING_WORLD" then
             TargetFrame_Update(self2)
-            TargetFrame:Hide()
             TargetFrame_UpdateAuras(self2)
+            TargetFrame:Hide()
         elseif event == "PLAYER_TARGET_CHANGED" then
             TargetFrame_Update(self2)
             TargetFrame_UpdateAuras(self2)
@@ -346,10 +348,34 @@ function NicerFrames:OnEnable()
         end
         TargetFrame:Hide()
     end
-    TargetFrame:SetScript("OnEvent", asdf)
+    TargetFrame:SetScript("OnEvent", BlizzardTargetFrameEvents)
     TargetFrame:RegisterEvent("UNIT_AURA")
     TargetFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     TargetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+    NicerFramesTarget:SetScript("OnEnter", function(self2)
+        UnitFrame_UpdateTooltip(self2)
+    end)
+    NicerFramesTarget:SetScript("OnLeave", function(self2)
+        GameTooltip:FadeOut()
+    end)
+    NicerFramesPlayer:SetScript("OnEnter", function(self2)
+        UnitFrame_UpdateTooltip(self2)
+    end)
+    NicerFramesPlayer:SetScript("OnLeave", function(self2)
+        GameTooltip:FadeOut()
+    end)
+    NicerFramesPet:SetScript("OnEnter", function(self2)
+        UnitFrame_UpdateTooltip(self2)
+    end)
+    NicerFramesPet:SetScript("OnLeave", function(self2)
+        GameTooltip:FadeOut()
+    end)
+    NicerFramesTargetOfTarget:SetScript("OnEnter", function(self2)
+        UnitFrame_UpdateTooltip(self2)
+    end)
+    NicerFramesTargetOfTarget:SetScript("OnLeave", function(self2)
+        GameTooltip:FadeOut()
+    end)
 
     LSM:Register("statusbar", "LiteStep", "Interface\\AddOns\\NicerFrames\\Textures\\StatusBar\\LiteStep")
     LSM:Register("statusbar", "glaze", "Interface\\AddOns\\NicerFrames\\Textures\\StatusBar\\glaze")
