@@ -1,6 +1,6 @@
 local LSM = LibStub("LibSharedMedia-3.0")
 local frames = {}
-local barTexture, font, dropDown
+local barTexture, dropDown
 
 function NicerFrames:UpdateName()
     for _, frame in pairs(frames) do
@@ -48,7 +48,6 @@ function NicerFrames:UpdatePlayerFrameBorder()
     else
         texture:SetTexture(layout.player.TextureFrameTexture.path)
     end
-    TargetFrame:SetScale(self.db.profile.targetFrameScale)
 end
 
 function NicerFrames:ToggleTextVisibility(frame)
@@ -115,8 +114,8 @@ end
 function NicerFrames:UpdateValues()
     if #frames < 1 then
         frames = {
-            TargetFrameCustom = TargetFrameCustom,
             PlayerFrameCustom = PlayerFrameCustom,
+            TargetFrameCustom = TargetFrameCustom,
             PetFrameCustom = PetFrameCustom,
             TargetOfTargetFrameCustom = TargetOfTargetFrameCustom,
         }
@@ -301,9 +300,7 @@ function NicerFrames:LayoutPortraitBorder(frame)
                 portraitBorder:Show()
             elseif isNpc then
                 local threatLevel = UnitReaction("player", "target")
-                if nil then
-                    -- print()
-                elseif threatLevel == 1 or threatLevel == 2 or threatLevel == 3 then
+                if threatLevel == 1 or threatLevel == 2 or threatLevel == 3 then
                     portraitBorder:SetVertexColor(1, 0, 0)
                 elseif threatLevel == 4 then
                     portraitBorder:SetVertexColor(1, 1, 0)
@@ -325,7 +322,7 @@ function NicerFrames:LayoutTextureFrame(frame)
     local layout = self.frameLayouts[self.db.profile.unitFrameStyle] or self.frameLayouts["default"]
     layout = layout[frame.unit]
 
-    -- Name text
+    -- NameText
     local nameText = _G[frame:GetName() .. "HealthBarNameText"]
     local unitIsAPlayer = UnitIsPlayer(frame.unit)
     if nameText then
@@ -336,7 +333,7 @@ function NicerFrames:LayoutTextureFrame(frame)
         end
     end
 
-    -- Level text
+    -- LevelText
     local levelText = _G[textureFrame:GetName() .. "LevelText"]
     if frame.unit == "pet" then
         levelText:Hide()
@@ -361,9 +358,9 @@ function NicerFrames:Layout(frame)
     if not unitExists then return end
 
     barTexture = LSM:Fetch("statusbar", self.db.profile.barTexture)
-    font = LSM:Fetch("font", self.db.profile.font)
 
-    self:LayoutLoop(frame:GetName())
+    self:LayoutFrameSize(frame)
+    self:LayoutFromFileAndDatabase(frame)
     self:LayoutParentFrame(frame)
     self:LayoutTextureFrame(frame)
     self:LayoutPortrait(frame)
@@ -378,16 +375,15 @@ function NicerFrames:Layout(frame)
     end
 end
 
-function NicerFrames:LayoutLoop(frameName)
-    local frame = _G[frameName]
+function NicerFrames:LayoutFrameSize(frame)
     local layout = self.frameLayouts[self.db.profile.unitFrameStyle] or self.frameLayouts["default"]
     layout = layout[frame.unit]
     frame:SetSize(unpack(layout.size))
     frame:SetScale(self.db.profile[frame.unit .. "FrameScale"])
-    self:LayoutFromTable2(frame)
+    TargetFrame:SetScale(self.db.profile.targetFrameScale)
 end
 
-function NicerFrames:LayoutFromTable2(frame2)
+function NicerFrames:LayoutFromFileAndDatabase(frame2)
     local setters = {
         size = function(frame, value)
             frame:SetSize(unpack(value))
@@ -626,10 +622,10 @@ function NicerFrames:LayoutIcons(frame)
     local index = GetRaidTargetIndex("target");
     local raidTargetIcon = TargetFrameCustomTextureFrameRaidTargetIcon
     if index and frame.unit == "target" then
-        SetRaidTargetIconTexture(raidTargetIcon, index);
-        raidTargetIcon:Show();
+        SetRaidTargetIconTexture(raidTargetIcon, index)
+        raidTargetIcon:Show()
     else
-        raidTargetIcon:Hide();
+        raidTargetIcon:Hide()
     end
 end
 
@@ -767,8 +763,6 @@ function PlayerFrameCustom_OnClick(self, button)
     if self.unit == "player" then
         if button == "RightButton" then
             ToggleDropDownMenu(1, nil, PlayerFrameDropDown, "cursor")
-            -- elseif button == "LeftButton" then
-            --     TargetUnit("player");
         end
     elseif self.unit == "target" then
         if button == "RightButton" then

@@ -15,44 +15,42 @@ local AURA_START_Y = 5
 
 local function ModifyBuffParent(frame, buffName, index, numDebuffs, anchorIndex, size, offsetX, offsetY)
     local buffFrame = _G[buffName .. index]
-    if buffFrame then
-        buffFrame:SetParent(TargetFrameCustom)
-        if index == 1 then
-            buffFrame:ClearAllPoints()
-            if UnitIsFriend("player", frame.unit) or numDebuffs == 0 then
-                buffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
-            else
-                if frame.debuffs then
-                    buffFrame:SetPoint("TOPLEFT", frame.debuffs, "BOTTOMLEFT", 0, -offsetY)
-                end
+    if not buffFrame then return end
+    buffFrame:SetParent(TargetFrameCustom)
+    if index == 1 then
+        buffFrame:ClearAllPoints()
+        if UnitIsFriend("player", frame.unit) or numDebuffs == 0 then
+            buffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
+        else
+            if frame.debuffs then
+                buffFrame:SetPoint("TOPLEFT", frame.debuffs, "BOTTOMLEFT", 0, -offsetY)
             end
+        end
 
-            if frame.buffs then
-                frame.buffs:SetParent(TargetFrameCustom)
-            end
+        if frame.buffs then
+            frame.buffs:SetParent(TargetFrameCustom)
         end
     end
 end
 
 local function ModifyDebuffParent(frame, debuffName, index, numBuffs, anchorIndex, size, offsetX, offsetY)
     local debuffFrame = _G[debuffName .. index]
-    if debuffFrame then
-        debuffFrame:SetParent(TargetFrameCustom)
-        if index == 1 then
-            debuffFrame:ClearAllPoints()
-            if UnitIsFriend("player", frame.unit) and numBuffs > 0 then
-                if frame.buffs then
-                    debuffFrame:SetPoint("TOPLEFT", frame.buffs, "BOTTOMLEFT", 0, -offsetY)
-                else
-                    debuffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
-                end
+    if not debuffFrame then return end
+    debuffFrame:SetParent(TargetFrameCustom)
+    if index == 1 then
+        debuffFrame:ClearAllPoints()
+        if UnitIsFriend("player", frame.unit) and numBuffs > 0 then
+            if frame.buffs then
+                debuffFrame:SetPoint("TOPLEFT", frame.buffs, "BOTTOMLEFT", 0, -offsetY)
             else
                 debuffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
             end
+        else
+            debuffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
+        end
 
-            if frame.debuffs then
-                frame.debuffs:SetParent(TargetFrameCustom)
-            end
+        if frame.debuffs then
+            frame.debuffs:SetParent(TargetFrameCustom)
         end
     end
 end
@@ -105,11 +103,11 @@ function NicerFrames:OnInitialize()
 end
 
 function NicerFrames:CreateCenterLine()
-    local f = CreateFrame("Frame", nil, UIParent)
-    f:SetWidth(1)
-    f:SetHeight(GetScreenHeight())
-    f:SetPoint("TOP", UIParent, "TOP", 0, 0)
-    local t = f:CreateTexture()
+    local centerLine = CreateFrame("Frame", nil, UIParent)
+    centerLine:SetWidth(1)
+    centerLine:SetHeight(GetScreenHeight())
+    centerLine:SetPoint("TOP", UIParent, "TOP", 0, 0)
+    local t = centerLine:CreateTexture()
     t:SetAllPoints()
     t:SetTexture(1, 0, 0, 0.5)
 end
