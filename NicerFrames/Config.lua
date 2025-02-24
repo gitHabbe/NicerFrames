@@ -650,7 +650,8 @@ NicerFrames.frameLayouts["default"]["targettarget"] = {
     Background = {
         size = { 46, 15 },
         position = { x = 42, y = 13, point = "BOTTOMLEFT" },
-        color = { 0, 0, 0, 0.5 }
+        color = { 0, 0, 0, 0.5 },
+        hidden = true,
     },
     Portrait = {
         strata = "MEDIUM",

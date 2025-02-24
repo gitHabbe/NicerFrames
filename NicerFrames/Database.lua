@@ -202,8 +202,8 @@ defaults["profile"] = {
         customColor = false
     },
     portraitIconStyle = "Default",
-    playerFrameScale = 1.7,
-    targetFrameScale = 1.7,
+    playerFrameScale = 1,
+    targetFrameScale = 1,
     petFrameScale = 1,
     targettargetFrameScale = 1,
     marked = {
