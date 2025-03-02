@@ -1,7 +1,38 @@
 local db
+local LibStub = LibStub
 local AddonName = "NicerFrames"
 local LSM = LibStub("LibSharedMedia-3.0")
 local defaults = {}
+
+local function ColorText(text, colorHex)
+    return "|c" .. colorHex .. text .. "|r"
+end
+
+local function GreenText(name)
+    return ColorText(name, "FF33FF99") -- Light green for addon names
+end
+
+local function BlueText(name)
+    return ColorText("|H" .. name .. "|h" .. name .. "|h", "FF00CCFF") -- Light blue for other addons with hyperlink
+end
+
+local function LightGreenText(text)
+    return ColorText(text, "FF00FF00") -- Green for links
+end
+
+local function BuildIntroText()
+    local text = "Thank you for installing " .. GreenText("NicerFrames") .. ", my 3rd World of Warcraft AddOn!\n\n"
+        .. "Check out my other addons:\n"
+        .. "1. " .. LightGreenText("NicerAuras") .. " - " .. BlueText("github.com/gitHabbe/NicerAuras") .. "\n"
+        .. "    Better looking and customizable buffs & debuffs for the target/focus frame\n\n"
+        .. "2. " .. LightGreenText("NicerCooldowns") .. " - " .. BlueText("github.com/gitHabbe/NicerCooldowns") .. "\n"
+        .. "    Group your cooldowns for a better overview of what abilities are ready\n\n"
+        .. "If you encounter any issues or want to contribute, please visit the project page: "
+        .. BlueText("github.com/gitHabbe/NicerFrames/issues") .. "\n\n"
+        .. "Enjoy using " .. GreenText("NicerFrames") .. "!\n/Habbe"
+
+    return text
+end
 
 local function autoOrder()
     local order = 0
@@ -15,15 +46,24 @@ local getOrder = autoOrder()
 Options = {
     name = AddonName,
     handler = NicerFrames,
-    type = 'group',
+    type = "group",
     args = {},
 }
 
 Options2 = {
     name = AddonName,
     handler = NicerFrames,
-    type = 'group',
+    type = "group",
     args = {},
+}
+Options2["args"] = {
+    addonDesc = {
+        type = "description",
+        name = BuildIntroText(),
+        order = getOrder(),
+        fontSize = "medium",
+        width = "full"
+    },
 }
 
 local function profileOption(params)
@@ -117,7 +157,7 @@ local function markedProfileOption(params)
             local key = info.arg or info[#info]
             local frame = NicerFrames.db.profile.marked.frame
             local type = NicerFrames.db.profile.marked.type
-            print(string.format("%s%s%s", frame, type, key[2]))
+            DebugNicerFrames:Print(string.format("%s%s%s", frame, type, key[2]))
             NicerFrames.db.profile.frameSettings = NicerFrames.db.profile.frameSettings or {}
             NicerFrames.db.profile.frameSettings[frame] = NicerFrames.db.profile.frameSettings[frame] or {}
             NicerFrames.db.profile.frameSettings[frame][type] = NicerFrames.db.profile.frameSettings[frame][type] or {}
@@ -186,6 +226,7 @@ defaults["profile"] = {
     petX = 0,
     petY = 0,
     portraitBorder = false,
+    invertTargetPortrait = false,
     nameColor = false,
     healthClassColor = false,
     textureFrameColor = {
@@ -272,6 +313,12 @@ Options["args"]["General"]["args"] = {
         end,
         refresh = true
     }),
+    invertTargetPortrait = profileOption({
+        type = "toggle",
+        name = "Invert target portrait",
+        desc = "Invert the Target frame to make it look at your player frame",
+        refresh = true
+    }),
     customPlayerName = profileOption({
         type = "input",
         name = "Custom player name",
@@ -311,7 +358,7 @@ Options["args"]["General"]["args"] = {
     }),
     portraitIconStyle = profileOption({
         type = "select",
-        name = "Class color namebar",
+        name = "Portrait style",
         values = function()
             local unitFrameStyleList = { Default = "Default", Cartoon = "Cartoon", NormalIcons = "Normal Icons" }
             if NicerFrames.db.profile.unitFrameStyle ~= "ArenaLive" then
@@ -319,6 +366,14 @@ Options["args"]["General"]["args"] = {
             end
             return unitFrameStyleList
         end,
+        refresh = true,
+    }),
+    barTexture = profileOption({
+        type = "select",
+        dialogControl = "LSM30_Statusbar",
+        name = "Bar texture",
+        desc = "Set the frames bar Texture",
+        values = LSM:HashTable("statusbar"),
         refresh = true,
     }),
     textFormatHeader = {
@@ -345,6 +400,33 @@ Options["args"]["General"]["args"] = {
         name = "Energy/Rage/Focus/Runic format",
         desc = "Use !CURR, !MAX, and !PERC as placeholders",
         width = "full",
+        refresh = true,
+    }),
+    alwaysShowStatusText = profileOption({
+        type = "toggle",
+        name = "Show HP & Mana text",
+        onChange = function(dbu)
+            if not dbu.alwaysShowStatusText and dbu.hideFullStatusTexts then
+                dbu.hideFullStatusTexts = false
+            end
+        end,
+        refresh = true,
+    }),
+    hideFullStatusTexts = profileOption({
+        type = "toggle",
+        name = "Hide HP & Mana at max",
+        desc = "Will still show up if you hover bars",
+        disabled = function()
+            return not NicerFrames.db.profile.alwaysShowStatusText
+        end,
+        refresh = true,
+    }),
+    fontFamily = profileOption({
+        type = "select",
+        dialogControl = "LSM30_Font",
+        name = "Font Family",
+        desc = "Set the font for frame text",
+        values = LSM:HashTable("font"),
         refresh = true,
     }),
     scaleHeader = {
@@ -382,40 +464,6 @@ Options["args"]["General"]["args"] = {
         min = 0.2,
         max = 4,
         step = 0.05,
-        refresh = true,
-    }),
-    alwaysShowStatusText = profileOption({
-        type = "toggle",
-        name = "Show HP & Mana text",
-        onChange = function(dbu)
-            if not dbu.alwaysShowStatusText and dbu.hideFullStatusTexts then
-                dbu.hideFullStatusTexts = false
-            end
-        end,
-        refresh = true,
-    }),
-    hideFullStatusTexts = profileOption({
-        type = "toggle",
-        name = "Hide HP & Mana when max",
-        disabled = function()
-            return not NicerFrames.db.profile.alwaysShowStatusText
-        end,
-        refresh = true,
-    }),
-    fontFamily = profileOption({
-        type = "select",
-        dialogControl = "LSM30_Font",
-        name = "Font Family",
-        desc = "Set the font for frame text",
-        values = LSM:HashTable("font"),
-        refresh = true,
-    }),
-    barTexture = profileOption({
-        type = "select",
-        dialogControl = "LSM30_Statusbar",
-        name = "Texture",
-        desc = "Set the frames bar Texture",
-        values = LSM:HashTable("statusbar"),
         refresh = true,
     }),
 }
@@ -549,18 +597,4 @@ Options["args"]["Frame specific"]["args"] = {
             }),
         }
     },
-}
-
-Options["args"]["Debug"] = {
-    type = "group",
-    name = "Developer mode",
-    order = 20,
-    args = {}
-}
-Options["args"]["Debug"]["args"] = {
-    debugMode = profileOption({
-        type = "toggle",
-        name = "Debug mode",
-        order = 1
-    }),
 }

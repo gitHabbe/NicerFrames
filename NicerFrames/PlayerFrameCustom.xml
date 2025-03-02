@@ -407,7 +407,7 @@
 							</Anchors> -->
 						</FontString>
 					</Layer>
-					<Layer level="OVERLAY">
+					<Layer level="BORDER">
 						<Texture
                             name="$parentStatusTexture"
                             file="Interface\CharacterFrame\UI-Player-Status"

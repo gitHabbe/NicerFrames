@@ -1,6 +1,47 @@
 local LSM = LibStub("LibSharedMedia-3.0")
 local frames = {}
 local barTexture, dropDown
+local UnitName = UnitName
+local UnitLevel = UnitLevel
+local UnitHealth = UnitHealth
+local UnitPower = UnitPower
+local GetQuestDifficultyColor = GetQuestDifficultyColor
+local UnitHealthMax = UnitHealthMax
+local UnitPowerMax = UnitPowerMax
+local UnitPowerType = UnitPowerType
+local UnitIsConnected = UnitIsConnected
+local UnitClass = UnitClass
+local UnitIsPlayer = UnitIsPlayer
+local CLASS_ICON_TCOORDS = CLASS_ICON_TCOORDS
+local unpack = unpack
+local SetPortraitTexture = SetPortraitTexture
+local UnitExists = UnitExists
+local RAID_CLASS_COLORS = RAID_CLASS_COLORS
+local UnitSelectionColor = UnitSelectionColor
+local PowerBarColor = PowerBarColor
+local UnitReaction = UnitReaction
+local TargetFrame = TargetFrame
+local IsResting = IsResting
+local IsPartyLeader = IsPartyLeader
+local HasLFGRestrictions = HasLFGRestrictions
+local GetLootMethod = GetLootMethod
+local GetNumPartyMembers = GetNumPartyMembers
+local GetNumRaidMembers = GetNumRaidMembers
+local UnitFactionGroup = UnitFactionGroup
+local UnitIsPVPFreeForAll = UnitIsPVPFreeForAll
+local UnitIsPVP = UnitIsPVP
+local GetRaidTargetIndex = GetRaidTargetIndex
+local SetRaidTargetIconTexture = SetRaidTargetIconTexture
+local floor = floor
+local CreateFrame = CreateFrame
+local UIDropDownMenu_Initialize = UIDropDownMenu_Initialize
+local UnitIsUnit = UnitIsUnit
+local UnitPopup_ShowMenu = UnitPopup_ShowMenu
+local UIParent = UIParent
+local ToggleDropDownMenu = ToggleDropDownMenu
+local PlayerFrameDropDown = PlayerFrameDropDown
+local TargetFrameDropDown = TargetFrameDropDown
+local PetFrameDropDown = PetFrameDropDown
 
 function NicerFrames:UpdateName()
     for _, frame in pairs(frames) do
@@ -68,16 +109,19 @@ function NicerFrames:ToggleTextVisibility(frame)
                 resourceFormat = self.db.profile.manaFormat
             end
         end
-        local resource = UnitTextType(frame.unit)
-        local maxResourceNumber = UnitMaxTextType(frame.unit)
+        local resourceValue = UnitTextType(frame.unit)
+        local maxResourceValue = UnitMaxTextType(frame.unit)
         local resourceBar = _G[frame:GetName() .. textType .. "Bar"]
         local resourceText = _G[resourceBar:GetName() .. "Text"]
-        resourceText:SetText(self:FormatResourceText(resourceFormat, resource, maxResourceNumber))
-        local isMaxHealth = resource == maxResourceNumber
-        if resourceBar:IsMouseOver() or self.db.profile.alwaysShowStatusText and not (self.db.profile.hideFullStatusTexts and isMaxHealth) then
+        resourceText:SetText(self:FormatResourceText(resourceFormat, resourceValue, maxResourceValue))
+        local isMaxResource = resourceValue == maxResourceValue
+        if resourceBar:IsMouseOver() or self.db.profile.alwaysShowStatusText and not (self.db.profile.hideFullStatusTexts and isMaxResource) then
             resourceText:Show()
         else
             resourceText:Hide()
+        end
+        if textType == "Health" and resourceValue <= 0 and UnitIsConnected(frame.unit) then
+            resourceText:SetText("DEAD")
         end
     end
 end
@@ -85,28 +129,17 @@ end
 function NicerFrames:UpdateHealthAndPower()
     for _, frame in pairs(frames) do
         local healthBar = _G[frame:GetName() .. "HealthBar"]
-        local powerBar = _G[frame:GetName() .. "PowerBar"]
-        local healthText = _G[healthBar:GetName() .. "Text"]
-        local powerText = _G[powerBar:GetName() .. "Text"]
-
         local health = UnitHealth(frame.unit)
         local maxHealth = UnitHealthMax(frame.unit)
         healthBar:SetMinMaxValues(0, maxHealth)
         healthBar:SetValue(health)
 
-
+        local powerBar = _G[frame:GetName() .. "PowerBar"]
         local power = UnitPower(frame.unit)
         local maxPower = UnitPowerMax(frame.unit)
         powerBar:SetMinMaxValues(0, maxPower)
         powerBar:SetValue(power)
 
-        if healthText then
-            healthText:SetText(self:FormatResourceText(self.db.profile.healthFormat, health, maxHealth))
-        end
-
-        if powerText then
-            powerText:SetText(self:FormatResourceText(NicerFrames.db.profile.manaFormat, power, maxPower))
-        end
         self:ToggleTextVisibility(frame)
     end
 end
@@ -210,7 +243,7 @@ function NicerFrames:LayoutPortrait(frame)
         SetPortraitTexture(portraitTexture, frame.unit)
         portraitTexture:SetTexCoord(unpack(layout.PortraitTexture.coords))
     end
-    if frame.unit == "target" then
+    if frame.unit == "target" and self.db.profile.invertTargetPortrait then
         invertTextureCoords(portraitTexture)
     end
     -- if frame.unit == "pet" then
@@ -245,6 +278,11 @@ function NicerFrames:LayoutNameBar(frame)
     end
 end
 
+local function isApproxEqual(a, b, epsilon)
+    epsilon = epsilon or 0.0001 -- Default tolerance
+    return math.abs(a - b) < epsilon
+end
+
 function NicerFrames:LayoutHealthBar(frame)
     local healthBar = _G[frame:GetName() .. "HealthBar"]
     if not healthBar then return end
@@ -261,10 +299,17 @@ function NicerFrames:LayoutHealthBar(frame)
         local _, className = UnitClass(frame.unit)
         local colors = RAID_CLASS_COLORS[className]
         healthBar:SetStatusBarColor(colors.r, colors.g, colors.b, 1)
+    elseif self.db.profile.unitFrameStyle == "Thick" then
+        local r, g, b, a = UnitSelectionColor(frame.unit)
+        if isApproxEqual(r, 0) and isApproxEqual(g, 0) and isApproxEqual(b, 1) and isApproxEqual(a, 1) then
+            r, g, b, a = 0, 0.99999779462814, 0, 0.99999779462814
+        end
+        healthBar:SetStatusBarColor(r, g, b, a)
     else
         local color = layout.HealthBarBackground.color
-        healthBarBg:SetTexture(1, 1, 1, 1)
+        healthBarBg:SetTexture(unpack(color))
         healthBarBg:SetVertexColor(0, 0, 0, 0.3)
+        healthBarBg:SetVertexColor(unpack(color))
     end
 end
 
@@ -279,8 +324,9 @@ function NicerFrames:LayoutPowerBar(frame)
     local powerType = UnitPowerType(frame.unit)
     local powerColor = PowerBarColor[powerType]
     if powerColor then
+        local color = layout.PowerBarBackground.color
         powerBar:SetStatusBarColor(powerColor.r, powerColor.g, powerColor.b)
-        powerBarBg:SetVertexColor(0, 0, 0, 0.3)
+        powerBarBg:SetVertexColor(unpack(color))
     end
 end
 
@@ -321,6 +367,12 @@ function NicerFrames:LayoutTextureFrame(frame)
     if not textureFrame then return end
     local layout = self.frameLayouts[self.db.profile.unitFrameStyle] or self.frameLayouts["default"]
     layout = layout[frame.unit]
+
+    local textureFrameTexture = _G[frame:GetName() .. "TextureFrameTexture"]
+    if textureFrameTexture then
+        local color = NicerFrames.db.profile.textureFrameColor
+        textureFrameTexture:SetVertexColor(color.r, color.g, color.b, color.a)
+    end
 
     -- NameText
     local nameText = _G[frame:GetName() .. "HealthBarNameText"]
@@ -370,6 +422,7 @@ function NicerFrames:Layout(frame)
     self:LayoutPortraitBorder(frame)
     self:LayoutDebugBackground(frame)
     self:UpdatePlayerFrameBorder()
+    self:UpdateRaidRoster()
     if frame.unit == "player" then
         self:LayoutIcons(frame)
     end
@@ -610,15 +663,6 @@ function NicerFrames:LayoutIcons(frame)
         PvPIcon:Hide()
     end
 
-    local groupIndicatorParent = _G[frame:GetName() .. "GroupIndicatorParent"]
-    if self.db.profile.debugMode then
-        PlayerFrameCustomGroupIndicatorParentGroupIndicatorText:SetText(GROUP .. " " .. "8")
-        groupIndicatorParent:SetWidth(PlayerFrameCustomGroupIndicatorParentGroupIndicatorText:GetWidth() + 40);
-        groupIndicatorParent:Show()
-    else
-        groupIndicatorParent:Hide()
-    end
-
     local index = GetRaidTargetIndex("target");
     local raidTargetIcon = TargetFrameCustomTextureFrameRaidTargetIcon
     if index and frame.unit == "target" then
@@ -686,10 +730,10 @@ function NicerFrames:UpdateFrame()
     local targetOfTarget = _G["TargetOfTargetFrameCustom"]
 
     local petExists = UnitExists("pet")
-    if playerFrame then self:Layout(playerFrame, self.db.profile.unitFrameStyle) end
-    if targetFrame then self:Layout(targetFrame, "default") end
-    if petFrame and petExists then self:Layout(petFrame, "default") end
-    if targetOfTarget then self:Layout(targetOfTarget, self.db.profile.unitFrameStyle) end
+    if playerFrame then self:Layout(playerFrame) end
+    if targetFrame then self:Layout(targetFrame) end
+    if petFrame and petExists then self:Layout(petFrame) end
+    if targetOfTarget then self:Layout(targetOfTarget) end
     NicerFrames:UpdateValues()
 end
 

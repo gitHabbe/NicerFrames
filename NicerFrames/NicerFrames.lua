@@ -1,7 +1,46 @@
 local AddonName = "NicerFrames"
+local LibStub = LibStub
 local LSM = LibStub("LibSharedMedia-3.0")
-NicerFrames = LibStub("AceAddon-3.0"):NewAddon(AddonName, "AceEvent-3.0", "AceConsole-3.0", "AceTimer-3.0")
+local GetBuildInfo = GetBuildInfo
+local UnitIsFriend = UnitIsFriend
+local UnitHealth = UnitHealth
+local UnitPower = UnitPower
+local UnitHealthMax = UnitHealthMax
+local UnitPowerMax = UnitPowerMax
+local CreateFrame = CreateFrame
+local UIParent = UIParent
+local GetScreenHeight = GetScreenHeight
+local ComboFrame = ComboFrame
+local CombatFeedback_Initialize = CombatFeedback_Initialize
+local CombatFeedback_OnUpdate = CombatFeedback_OnUpdate
+local hooksecurefunc = hooksecurefunc
+local UnitExists = UnitExists
+local RegisterUnitWatch = RegisterUnitWatch
+local IsShiftKeyDown = IsShiftKeyDown
+local CombatFeedback_OnCombatEvent = CombatFeedback_OnCombatEvent
+local GetReadyCheckStatus = GetReadyCheckStatus
+local ReadyCheck_Confirm = ReadyCheck_Confirm
+local ReadyCheck_Start = ReadyCheck_Start
+local GetNumRaidMembers = GetNumRaidMembers
+local MAX_RAID_MEMBERS = MAX_RAID_MEMBERS
+local GetRaidRosterInfo = GetRaidRosterInfo
+local UnitName = UnitName
+local GROUP = GROUP
+local mod = mod
+local IsResting = IsResting
+local PlayerFrame = PlayerFrame
+local TargetFrame = TargetFrame
+local PetFrame = PetFrame
+local TargetFrame_Update = TargetFrame_Update
+-- local TargetFrame_UpdateAuras = TargetFrame_UpdateAuras
+local UnitFrame_UpdateTooltip = UnitFrame_UpdateTooltip
+local GameTooltip = GameTooltip
+local ReloadUI = ReloadUI
+local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
+local InterfaceOptionsFrame_OpenToFrame = InterfaceOptionsFrame_OpenToFrame
+local ToggleDropDownMenu = ToggleDropDownMenu
 
+NicerFrames = LibStub("AceAddon-3.0"):NewAddon(AddonName, "AceEvent-3.0", "AceConsole-3.0", "AceTimer-3.0")
 NicerFrames.buildInfo = select(2, GetBuildInfo())
 NicerFrames.build = tonumber(NicerFrames.buildInfo)
 NicerFrames.tocVersion = select(4, GetBuildInfo())
@@ -73,8 +112,15 @@ function NicerFrames:AddOnLeaveEvent(frame)
         local resourceText = _G[resourceBar:GetName() .. "Text"]
         if resourceBar:GetScript("OnLeave") then return end
         resourceBar:EnableMouse(true)
+
         resourceBar:SetScript("OnMouseDown", function(self, button)
-            frame:GetScript("OnClick")(frame, button)
+            if button == "RightButton" then
+                local frameReference = ""
+                if frame:GetName() == "PlayerFrameCustom" then frameReference = "PlayerFrame" end
+                if frame:GetName() == "TargetFrameCustom" then frameReference = "TargetFrame" end
+                if frame:GetName() == "PetFrameCustom" then frameReference = "PetFrame" end
+                ToggleDropDownMenu(1, nil, _G[frameReference .. "DropDown"], "cursor")
+            end
         end)
         resourceBar:SetScript("OnLeave", function(self2)
             local resourceType = UnitTextType(frame.unit)
@@ -92,7 +138,6 @@ function NicerFrames:AddOnLeaveEvent(frame)
         end)
     end
 end
-
 function NicerFrames:OnInitialize()
     self:InitDatabase()
     LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, Options2)
@@ -100,7 +145,6 @@ function NicerFrames:OnInitialize()
 
     self:RegisterOptionCategory("General", Options["args"]["General"])
     self:RegisterOptionCategory("Frame specific", Options["args"]["Frame specific"])
-    self:RegisterOptionCategory("Debug", Options["args"]["Debug"])
     self:RegisterOptionCategory("Profiles", Options.args.profiles)
     -- self:CreateCenterLine()
 end
@@ -110,9 +154,9 @@ function NicerFrames:CreateCenterLine()
     centerLine:SetWidth(1)
     centerLine:SetHeight(GetScreenHeight())
     centerLine:SetPoint("TOP", UIParent, "TOP", 0, 0)
-    local t = centerLine:CreateTexture()
-    t:SetAllPoints()
-    t:SetTexture(1, 0, 0, 0.5)
+    local texture = centerLine:CreateTexture()
+    texture:SetAllPoints()
+    texture:SetTexture(1, 0, 0, 0.5)
 end
 
 function NicerFrames:RegisterOptionCategory(name, optionsPath)
@@ -122,6 +166,14 @@ end
 
 function NicerFrames:STANDARD_UPDATE()
     self:UpdateFrame()
+end
+
+local function ModifyComboParent()
+    local comboFrame = ComboFrame
+    if not comboFrame then return end
+    comboFrame:SetParent(TargetFrameCustom)
+    comboFrame:ClearAllPoints()
+    comboFrame:SetPoint("TOPRIGHT", TargetFrameCustom, "TOPRIGHT", 2, 11)
 end
 
 function NicerFrames:PLAYER_ENTERING_WORLD()
@@ -156,6 +208,9 @@ function NicerFrames:PLAYER_ENTERING_WORLD()
 
     hooksecurefunc("TargetFrame_UpdateBuffAnchor", ModifyBuffParent)
     hooksecurefunc("TargetFrame_UpdateDebuffAnchor", ModifyDebuffParent)
+    hooksecurefunc("ComboFrame_Update", ModifyComboParent)
+    self:PLAYER_UPDATE_RESTING()
+    self:UpdateRaidRoster()
 end
 
 function NicerFrames:PLAYER_TARGET_CHANGED()
@@ -188,7 +243,6 @@ function NicerFrames:CreateUnitFrame(unit, frameName, parent)
     frame.parent = parent
     frame:SetAttribute("unit", unit)
     RegisterUnitWatch(frame)
-
 
     self:AddOnLeaveEvent(frame)
 
@@ -253,16 +307,23 @@ function NicerFrames:READY_CHECK()
 end
 
 function NicerFrames:ROSTER_UPDATE()
-    PlayerFrameCustomGroupIndicatorParent:Hide()
+    self:UpdateRaidRoster()
+end
+
+function NicerFrames:UpdateRaidRoster()
     local numRaidMembers = GetNumRaidMembers()
-    if numRaidMembers == 0 then return end
+    if numRaidMembers == 0 then
+        PlayerFrameCustomGroupIndicatorParent:Hide()
+        return
+    end
     for i = 1, MAX_RAID_MEMBERS do
         if i <= numRaidMembers then
             local name, _, subgroup = GetRaidRosterInfo(i)
             if name == UnitName("player") then
-                PlayerFrameCustomGroupIndicatorParentGroupIndicatorText:SetText(GROUP .. " " .. subgroup)
-                local groupIndicatorParent = _G[frame:GetName() .. "GroupIndicatorParent"]
-                groupIndicatorParent:SetWidth(PlayerFrameCustomGroupIndicatorParentGroupIndicatorText:GetWidth() + 40);
+                local groupIndicatorParent = _G[PlayerFrameCustom:GetName() .. "GroupIndicatorParent"]
+                local groupText = _G[groupIndicatorParent:GetName() .. "GroupIndicatorText"]
+                groupText:SetText(GROUP .. " " .. subgroup)
+                groupIndicatorParent:SetWidth(groupText:GetWidth() + 40)
                 groupIndicatorParent:Show()
             end
         end
@@ -292,6 +353,18 @@ function NicerFrames:ApplyRestGlow(self2, elapsed)
     end
 end
 
+function NicerFrames:PLAYER_UPDATE_RESTING()
+    if IsResting() then
+        PlayerFrameCustomTextureFrameStatusTexture:Show()
+        PlayerFrameCustomTextureFrameRestGlow:Show()
+        PlayerFrameCustom:SetScript("OnUpdate", function(self2, elapsed) self:ApplyRestGlow(self2, elapsed) end)
+    else
+        PlayerFrameCustomTextureFrameStatusTexture:Hide()
+        PlayerFrameCustomTextureFrameRestGlow:Hide()
+        PlayerFrameCustom:SetScript("OnUpdate", nil)
+    end
+end
+
 function NicerFrames:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_HEALTH", "STANDARD_UPDATE")
@@ -308,6 +381,7 @@ function NicerFrames:OnEnable()
     self:RegisterEvent("UNIT_PET")
     self:RegisterEvent("UNIT_COMBAT")
     self:RegisterEvent("READY_CHECK")
+    self:RegisterEvent("PLAYER_UPDATE_RESTING")
     self:RegisterEvent("RAID_TARGET_UPDATE", "STANDARD_UPDATE")
 
     self:RegisterEvent("PARTY_MEMBERS_CHANGED", "ROSTER_UPDATE")
@@ -315,15 +389,17 @@ function NicerFrames:OnEnable()
     self:RegisterEvent("RAID_ROSTER_UPDATE", "ROSTER_UPDATE")
 
     local NicerFramesPlayer = self:CreateUnitFrame("player", "PlayerFrameCustom", UIParent)
-    NicerFramesPlayer:SetScript("OnClick", PlayerFrameCustom_OnClick)
+    NicerFramesPlayer:SetScript("PostClick", PlayerFrameCustom_OnClick)
     NicerFramesPlayer.statusCounter = 0;
     NicerFramesPlayer.statusSign = -1;
-    NicerFramesPlayer:SetScript("OnUpdate", function(self2, elapsed) self:ApplyRestGlow(self2, elapsed) end)
+    NicerFramesPlayer:EnableMouse(true)
     NicerFramesPlayer:SetAttribute("*type1", "target")
     local NicerFramesTarget = self:CreateUnitFrame("target", "TargetFrameCustom", UIParent)
     NicerFramesTarget:SetScript("OnClick", PlayerFrameCustom_OnClick)
     local NicerFramesPet = self:CreateUnitFrame("pet", "PetFrameCustom", UIParent)
-    NicerFramesPet:SetScript("OnClick", PlayerFrameCustom_OnClick)
+    NicerFramesPet:SetScript("PostClick", PlayerFrameCustom_OnClick)
+    NicerFramesPet:EnableMouse(true)
+    NicerFramesPet:SetAttribute("*type1", "target")
     local NicerFramesTargetOfTarget = self:CreateUnitFrame("targettarget", "TargetOfTargetFrameCustom", UIParent)
     NicerFramesTargetOfTarget:EnableMouse(true)
     NicerFramesTargetOfTarget:SetAttribute("*type1", "target")
@@ -384,7 +460,7 @@ function NicerFrames:OnEnable()
     self:CreateSlashCommands()
 
     if self.db.profile.debugMode then
-        -- self:SlashCommand("")
+        self:SlashCommand("")
     end
 end
 
@@ -405,9 +481,15 @@ function NicerFrames:RefreshConfig()
     self:UpdatePlayerFrameBorder()
 end
 
+function NicerFrames:ToggleDebugMode()
+    self.db.profile.debugMode = not self.db.profile.debugMode
+    self:RefreshConfig()
+end
+
 function NicerFrames:CreateSlashCommands()
     self:RegisterChatCommand("nicerframes", "SlashCommand")
     self:RegisterChatCommand("nf", "SlashCommand")
+    self:RegisterChatCommand("nfdebug", "ToggleDebugMode")
 end
 
 function NicerFrames:SlashCommand(msg)
