@@ -32,7 +32,7 @@ local PlayerFrame = PlayerFrame
 local TargetFrame = TargetFrame
 local PetFrame = PetFrame
 local TargetFrame_Update = TargetFrame_Update
--- local TargetFrame_UpdateAuras = TargetFrame_UpdateAuras
+local TargetFrame_UpdateAuras = TargetFrame_UpdateAuras
 local UnitFrame_UpdateTooltip = UnitFrame_UpdateTooltip
 local GameTooltip = GameTooltip
 local ReloadUI = ReloadUI
@@ -49,8 +49,41 @@ NicerFrames.isClassic60 = NicerFrames.build > 40000 and NicerFrames.tocVersion <
 NicerFrames.isTBC = NicerFrames.build > 5000 and NicerFrames.build < 10000
 NicerFrames.isWotlk = NicerFrames.build > 9000 and NicerFrames.build < 13000
 
-local AURA_START_X = 1
+local AURA_START_X = 3
 local AURA_START_Y = 5
+
+local function ModifySpellbarPosition(spellbar)
+    TargetFrameCustom.haveToT = true
+    TargetFrameCustom.haveElite = true
+    TargetFrameCustom.auraRows = 1
+
+    if not TargetFrameCustom.spellbarAnchor then
+        TargetFrameCustom.spellbarAnchor = spellbar
+        spellbar:SetParent(TargetFrameCustom)
+    end
+
+    local xOffset = 24
+    local yOffset = -26
+    if NicerFrames.db.profile.unitFrameStyle == "ArenaLive" then
+        xOffset = 40
+        yOffset = -21
+    end
+    local a = UnitBuff("target", 1)
+    local b = UnitDebuff("target", 1)
+    TargetFrameSpellBar:SetParent(TargetFrameCustom)
+    if not a and not b then
+        TargetFrameSpellBar:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", xOffset, yOffset - 8)
+    else
+        TargetFrameSpellBar:SetPoint("TOPLEFT", TargetFrame.spellbarAnchor, "BOTTOMLEFT", 25, -18)
+    end
+
+end
+
+local function ModifySpellbarPositionOnEvent(self2, event, ...)
+    if self2.unit == "target" and (event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START") then
+        Target_Spellbar_AdjustPosition(self2)
+    end
+end
 
 local function ModifyBuffParent(frame, buffName, index, numDebuffs, anchorIndex, size, offsetX, offsetY)
     local buffFrame = _G[buffName .. index]
@@ -58,11 +91,17 @@ local function ModifyBuffParent(frame, buffName, index, numDebuffs, anchorIndex,
     buffFrame:SetParent(TargetFrameCustom)
     if index == 1 then
         buffFrame:ClearAllPoints()
+        local xOffset = 3
+        local yOffset = 5
+        if NicerFrames.db.profile.unitFrameStyle == "ArenaLive" then
+            xOffset = 34
+            yOffset = 2
+        end
         if UnitIsFriend("player", frame.unit) or numDebuffs == 0 then
-            buffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", AURA_START_X, AURA_START_Y)
+            buffFrame:SetPoint("TOPLEFT", TargetFrameCustom, "BOTTOMLEFT", xOffset, yOffset)
         else
             if frame.debuffs then
-                buffFrame:SetPoint("TOPLEFT", frame.debuffs, "BOTTOMLEFT", 0, -offsetY)
+                    buffFrame:SetPoint("TOPLEFT", frame.debuffs, "BOTTOMLEFT", 0, -offsetY)
             end
         end
 
@@ -134,8 +173,41 @@ function NicerFrames:AddOnLeaveEvent(frame)
             end
         end)
         resourceBar:SetScript("OnEnter", function(self2)
-            _G[self2:GetName() .. "Text"]:Show();
+            _G[self2:GetName() .. "Text"]:Show()
         end)
+    end
+    if frame.unit == "player" then
+        local resourceBar = _G["PlayerFrameCustomDruidBarStatus"]
+        local resourceText = _G["PlayerFrameCustomDruidBarStatusText"]
+
+        -- Create an invisible overlay frame for mouse events
+        if not resourceBar.mouseOverlay then
+            resourceBar.mouseOverlay = CreateFrame("Frame", "PlayerFrameCustomDruidBarMouseOverlay", resourceBar)
+
+            resourceBar.mouseOverlay:SetPoint("TOPLEFT", resourceBar, "TOPLEFT", -5, 0)
+            resourceBar.mouseOverlay:SetPoint("BOTTOMRIGHT", resourceBar, "BOTTOMRIGHT", 5, -3)
+
+            resourceBar.mouseOverlay:EnableMouse(true)
+            -- resourceBar.mouseOverlay:SetFrameLevel(1)
+
+            resourceBar.mouseOverlay:SetScript("OnEnter", function(self)
+                resourceText:Show()
+            end)
+
+            resourceBar.mouseOverlay:SetScript("OnLeave", function(self)
+                local currmana = UnitPower(frame.unit, 0)
+                local maxmana = UnitPowerMax(frame.unit, 0)
+                local isMaxResource = currmana == maxmana
+                local alwaysShow = NicerFrames.db.profile.alwaysShowStatusText
+                local hideFull = NicerFrames.db.profile.hideFullStatusTexts
+
+                if (isMaxResource and hideFull) or not alwaysShow then
+                    resourceText:Hide()
+                end
+            end)
+        end
+
+        resourceBar:EnableMouse(false)
     end
 end
 function NicerFrames:OnInitialize()
@@ -146,6 +218,7 @@ function NicerFrames:OnInitialize()
     self:RegisterOptionCategory("General", Options["args"]["General"])
     self:RegisterOptionCategory("Frame specific", Options["args"]["Frame specific"])
     self:RegisterOptionCategory("Profiles", Options.args.profiles)
+
     -- self:CreateCenterLine()
 end
 
@@ -165,7 +238,7 @@ function NicerFrames:RegisterOptionCategory(name, optionsPath)
 end
 
 function NicerFrames:STANDARD_UPDATE()
-    self:UpdateFrame()
+    self:UpdateFrames()
 end
 
 local function ModifyComboParent()
@@ -176,41 +249,61 @@ local function ModifyComboParent()
     comboFrame:SetPoint("TOPRIGHT", TargetFrameCustom, "TOPRIGHT", 2, 11)
 end
 
+function NicerFrames:HookAurasAndCastBar()
+    local addonName = "NicerAuras"
+    local loaded, finished = IsAddOnLoaded(addonName)
+    local addonFound = false
+
+    if loaded then
+        addonFound = true
+    else
+        -- Set up an event to check when it gets loaded
+        self:RegisterEvent("ADDON_LOADED", function(event, loadedAddon)
+            print(event)
+            if loadedAddon == addonName then
+                addonFound = true
+                self:UnregisterEvent("ADDON_LOADED")
+                ModifyBuffParent = function() end
+                ModifyDebuffParent = function() end
+            end
+        end)
+    end
+
+    if not addonFound then
+        hooksecurefunc("TargetFrame_UpdateBuffAnchor", ModifyBuffParent)
+        hooksecurefunc("TargetFrame_UpdateDebuffAnchor", ModifyDebuffParent)
+        hooksecurefunc("CastingBarFrame_OnEvent", ModifySpellbarPositionOnEvent)
+        if not self.db.profile.hideDefaultCastBar then
+            hooksecurefunc("Target_Spellbar_AdjustPosition", ModifySpellbarPosition)
+        end
+    end
+    hooksecurefunc("ComboFrame_Update", ModifyComboParent)
+
+    TargetFrameCustom.haveToT = true
+    TargetFrameCustom.haveElite = true
+    TargetFrameCustom.auraRows = 1
+end
+
+function NicerFrames:AssignCombatFeedback()
+    CombatFeedback_Initialize(PlayerFrameCustom, PlayerFrameCustomTextureFrameHitIndicator, 34)
+    TargetFrameCustomTextureFrameHitIndicator:ClearAllPoints()
+    TargetFrameCustomTextureFrameHitIndicator:SetPoint("CENTER", TargetFrameCustomTextureFrame, "CENTER", 63, 4)
+    CombatFeedback_Initialize(TargetFrameCustom, TargetFrameCustomTextureFrameHitIndicator, 34)
+    PetFrameCustomTextureFrameHitIndicator:ClearAllPoints()
+    PetFrameCustomTextureFrameHitIndicator:SetPoint("CENTER", PetFrameCustomTextureFrame, "CENTER", -36, 5)
+    CombatFeedback_Initialize(PetFrameCustom, PetFrameCustomTextureFrameHitIndicator, 34)
+end
+
 function NicerFrames:PLAYER_ENTERING_WORLD()
     PlayerFrameCustom.isMoving = false
     TargetFrameCustom.isMoving = false
     PetFrameCustom.isMoving = false
 
-    CombatFeedback_Initialize(PlayerFrameCustom, PlayerFrameCustomTextureFrameHitIndicator, 34);
-    TargetFrameCustomTextureFrameHitIndicator:ClearAllPoints()
-    TargetFrameCustomTextureFrameHitIndicator:SetPoint("CENTER", TargetFrameCustomTextureFrame, "CENTER", 63, 4)
-    CombatFeedback_Initialize(TargetFrameCustom, TargetFrameCustomTextureFrameHitIndicator, 34);
-    PetFrameCustomTextureFrameHitIndicator:ClearAllPoints()
-    PetFrameCustomTextureFrameHitIndicator:SetPoint("CENTER", PetFrameCustomTextureFrame, "CENTER", -36, 5)
-    CombatFeedback_Initialize(PetFrameCustom, PetFrameCustomTextureFrameHitIndicator, 34);
-    self:UpdateFrame()
-
-    function MyUpdateFunction()
-        CombatFeedback_OnUpdate(PlayerFrameCustom)
-    end
-
-    function MyUpdateFunction2()
-        CombatFeedback_OnUpdate(TargetFrameCustom)
-    end
-
-    function MyUpdateFunction3()
-        CombatFeedback_OnUpdate(PetFrameCustom)
-    end
-
-    self.updateTimer = self:ScheduleRepeatingTimer(MyUpdateFunction, 0.05)
-    self.updateTimer = self:ScheduleRepeatingTimer(MyUpdateFunction2, 0.05)
-    self.updateTimer = self:ScheduleRepeatingTimer(MyUpdateFunction3, 0.05)
-
-    hooksecurefunc("TargetFrame_UpdateBuffAnchor", ModifyBuffParent)
-    hooksecurefunc("TargetFrame_UpdateDebuffAnchor", ModifyDebuffParent)
-    hooksecurefunc("ComboFrame_Update", ModifyComboParent)
+    self:UpdateFrames()
     self:PLAYER_UPDATE_RESTING()
-    self:UpdateRaidRoster()
+    self:LayoutRaidGroup()
+    self:HookAurasAndCastBar()
+    self:AssignCombatFeedback()
 end
 
 function NicerFrames:PLAYER_TARGET_CHANGED()
@@ -218,7 +311,7 @@ function NicerFrames:PLAYER_TARGET_CHANGED()
     local targetOfTargetExists = UnitExists("targettarget")
     if targetExists then
         TargetFrameCustom:Show()
-        self:UpdateFrame()
+        self:UpdateFrames()
     else
         TargetFrameCustom:Hide()
     end
@@ -275,59 +368,39 @@ function NicerFrames:UNIT_PET(event, unit)
     else
         PetFrameCustom:Hide()
     end
-    self:UpdateFrame()
+    self:UpdateFrames()
 end
 
 function NicerFrames:UNIT_COMBAT(event, ...)
     local arg1, arg2, arg3, arg4, arg5 = ...
     if arg1 == "target" then
-        CombatFeedback_OnCombatEvent(TargetFrameCustom, arg2, arg3, arg4, arg5);
+        CombatFeedback_OnCombatEvent(TargetFrameCustom, arg2, arg3, arg4, arg5)
     elseif arg1 == "player" then
-        CombatFeedback_OnCombatEvent(PlayerFrameCustom, arg2, arg3, arg4, arg5);
+        CombatFeedback_OnCombatEvent(PlayerFrameCustom, arg2, arg3, arg4, arg5)
     elseif arg1 == "pet" then
-        CombatFeedback_OnCombatEvent(PetFrameCustom, arg2, arg3, arg4, arg5);
+        CombatFeedback_OnCombatEvent(PetFrameCustom, arg2, arg3, arg4, arg5)
     end
 end
 
 function NicerFrames:READY_CHECK()
     local readyCheck = _G["PlayerFrameCustomReadyCheck"]
     readyCheck:Show()
-    local readyCheckStatus = GetReadyCheckStatus("player");
+    local readyCheckStatus = GetReadyCheckStatus("player")
     if readyCheckStatus then
         if readyCheckStatus == "ready" then
-            ReadyCheck_Confirm(readyCheck, 1);
+            ReadyCheck_Confirm(readyCheck, 1)
         elseif readyCheckStatus == "notready" then
-            ReadyCheck_Confirm(readyCheck, 0);
+            ReadyCheck_Confirm(readyCheck, 0)
         else
-            ReadyCheck_Start(readyCheck);
+            ReadyCheck_Start(readyCheck)
         end
     else
-        readyCheck:Hide();
+        readyCheck:Hide()
     end
 end
 
 function NicerFrames:ROSTER_UPDATE()
-    self:UpdateRaidRoster()
-end
-
-function NicerFrames:UpdateRaidRoster()
-    local numRaidMembers = GetNumRaidMembers()
-    if numRaidMembers == 0 then
-        PlayerFrameCustomGroupIndicatorParent:Hide()
-        return
-    end
-    for i = 1, MAX_RAID_MEMBERS do
-        if i <= numRaidMembers then
-            local name, _, subgroup = GetRaidRosterInfo(i)
-            if name == UnitName("player") then
-                local groupIndicatorParent = _G[PlayerFrameCustom:GetName() .. "GroupIndicatorParent"]
-                local groupText = _G[groupIndicatorParent:GetName() .. "GroupIndicatorText"]
-                groupText:SetText(GROUP .. " " .. subgroup)
-                groupIndicatorParent:SetWidth(groupText:GetWidth() + 40)
-                groupIndicatorParent:Show()
-            end
-        end
-    end
+    self:LayoutRaidGroup()
 end
 
 function NicerFrames:ApplyRestGlow(self2, elapsed)
@@ -337,7 +410,7 @@ function NicerFrames:ApplyRestGlow(self2, elapsed)
         local sign    = self2.statusSign
 
         if (counter > 0.5) then
-            sign = -sign;
+            sign = -sign
             self2.statusSign = sign
         end
         counter = mod(counter, 0.5)
@@ -354,7 +427,7 @@ function NicerFrames:ApplyRestGlow(self2, elapsed)
 end
 
 function NicerFrames:PLAYER_UPDATE_RESTING()
-    if IsResting() then
+    if IsResting() and not self.db.profile.hideRestGlow then
         PlayerFrameCustomTextureFrameStatusTexture:Show()
         PlayerFrameCustomTextureFrameRestGlow:Show()
         PlayerFrameCustom:SetScript("OnUpdate", function(self2, elapsed) self:ApplyRestGlow(self2, elapsed) end)
@@ -375,6 +448,7 @@ function NicerFrames:OnEnable()
     self:RegisterEvent("PLAYER_LEVEL_UP", "STANDARD_UPDATE")
     self:RegisterEvent("UNIT_PORTRAIT_UPDATE", "STANDARD_UPDATE")
     self:RegisterEvent("PORTRAITS_UPDATED", "STANDARD_UPDATE")
+    self:RegisterEvent("UNIT_DISPLAYPOWER", "STANDARD_UPDATE")
     self:RegisterEvent("PLAYER_TARGET_CHANGED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -390,8 +464,8 @@ function NicerFrames:OnEnable()
 
     local NicerFramesPlayer = self:CreateUnitFrame("player", "PlayerFrameCustom", UIParent)
     NicerFramesPlayer:SetScript("PostClick", PlayerFrameCustom_OnClick)
-    NicerFramesPlayer.statusCounter = 0;
-    NicerFramesPlayer.statusSign = -1;
+    NicerFramesPlayer.statusCounter = 0
+    NicerFramesPlayer.statusSign = -1
     NicerFramesPlayer:EnableMouse(true)
     NicerFramesPlayer:SetAttribute("*type1", "target")
     local NicerFramesTarget = self:CreateUnitFrame("target", "TargetFrameCustom", UIParent)
@@ -408,18 +482,33 @@ function NicerFrames:OnEnable()
     PetFrame:Hide()
     TargetFrame:SetScript("OnEvent", nil)
     TargetFrame:UnregisterAllEvents()
+
+    local function SafeTargetFrameUpdate(frame)
+        local originalFunction = Target_Spellbar_AdjustPosition
+        Target_Spellbar_AdjustPosition = function() end
+        TargetFrame_Update(frame)
+        Target_Spellbar_AdjustPosition = originalFunction
+    end
+
+    local function SafeTargetFrameUpdateAuras(frame)
+        local originalFunction = Target_Spellbar_AdjustPosition
+        Target_Spellbar_AdjustPosition = function() end
+        TargetFrame_UpdateAuras(frame)
+        Target_Spellbar_AdjustPosition = originalFunction
+    end
+
     local function BlizzardTargetFrameEvents(self2, event, ...)
         local arg1 = ...
         if event == "PLAYER_ENTERING_WORLD" then
-            TargetFrame_Update(self2)
-            TargetFrame_UpdateAuras(self2)
+            SafeTargetFrameUpdateAuras(self2)
+            SafeTargetFrameUpdate(self2)
             TargetFrame:Hide()
         elseif event == "PLAYER_TARGET_CHANGED" then
-            TargetFrame_Update(self2)
-            TargetFrame_UpdateAuras(self2)
+            SafeTargetFrameUpdateAuras(self2)
+            SafeTargetFrameUpdate(self2)
         elseif event == "UNIT_AURA" then
             if arg1 == "target" then
-                TargetFrame_UpdateAuras(self2)
+                SafeTargetFrameUpdateAuras(self2)
             end
         end
         TargetFrame:Hide()
@@ -478,7 +567,7 @@ function NicerFrames:RefreshConfig()
     local targetOfTargetFrame = _G["TargetOfTargetFrameCustom"]
     self:Layout(targetOfTargetFrame)
     self:UpdateValues()
-    self:UpdatePlayerFrameBorder()
+    self:LayoutPlayerFrameBorder()
 end
 
 function NicerFrames:ToggleDebugMode()

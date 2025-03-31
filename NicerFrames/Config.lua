@@ -1,4 +1,41 @@
-local frameLayouts = {}
+local function updateLayoutValues(original, new)
+    for k, v in pairs(new) do
+        if type(v) == "table" and type(original[k]) == "table" then
+            updateLayoutValues(original[k], v)
+        else
+            original[k] = v
+        end
+    end
+end
+
+local function deepcopy(orig)
+    if type(orig) ~= 'table' then return orig end
+    local copy = {}
+    for k, v in pairs(orig) do
+        if type(v) == 'table' then
+            copy[k] = deepcopy(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
+end
+
+local function createThickLayout(layoutType, unitType)
+    local defaultLayout = NicerFrames.frameLayouts["default"][unitType]
+    NicerFrames.frameLayouts[layoutType][unitType] = deepcopy(defaultLayout)
+    return NicerFrames.frameLayouts[layoutType][unitType]
+end
+
+local function adjust(table, propertyName, value)
+    if type(value) == 'table' then
+        table[propertyName] = value
+    else
+        table[propertyName] = (table[propertyName] or 0) + value
+    end
+end
+
+local textures = "Interface\\AddOns\\NicerFrames\\Textures"
 NicerFrames.frameLayouts = {}
 NicerFrames.frameLayouts["default"] = {}
 NicerFrames.frameLayouts["default"]["player"] = {
@@ -13,8 +50,8 @@ NicerFrames.frameLayouts["default"]["player"] = {
         point = "TOPLEFT",
         relativeTo = "UIParent",
         relativePoint = "TOPLEFT",
-        x = -19,
-        y = -4,
+        x = 52,
+        y = -25,
     },
     -- Background texture
     Background = {
@@ -64,20 +101,10 @@ NicerFrames.frameLayouts["default"]["player"] = {
     },
     HealthBarBackground = {
         color = { 0, 0, 0, 0.5 },
-        -- position = {
-        --     point = "TOPLEFT",
-        --     relativeTo = "PlayerFrameCustomHealthBar",
-        --     relativePoint = "TOPLEFT"
-        -- },
-        -- position2 = {
-        --     point = "BOTTOMRIGHT",
-        --     relativeTo = "PlayerFrameCustomHealthBar",
-        --     relativePoint = "BOTTOMRIGHT"
-        -- },
     },
     HealthBarNameText = {
         text = {
-            size = 9,
+            size = 10,
             font = "GameFontNormalSmall",
             color = { 0.99999780301005, 0.81960606575012, 0, 0.99999779462814 },
         },
@@ -130,20 +157,20 @@ NicerFrames.frameLayouts["default"]["player"] = {
         frameLevel = 3,
         size = { 185, 50 },
         position = { point = "CENTER", x = 0, y = 0 },
-        options = {
-            rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Rare",
-            elite = "Interface\\TargetingFrame\\UI-TargetingFrame-Elite",
-            rareElite = "Interface\\TargetingFrame\\UI-TargetingFrame-Rare-Elite",
-        }
     },
     TextureFrameTexture = {
         path = "Interface\\TargetingFrame\\UI-TargetingFrame",
         coords = { 1, 0, 0, 1 },
         position = { point = "TOPLEFT", x = -47, y = 23 },
+        options = {
+            rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Rare",
+            elite = "Interface\\TargetingFrame\\UI-TargetingFrame-Elite",
+            rareelite = "Interface\\TargetingFrame\\UI-TargetingFrame-Rare-Elite",
+        }
     },
     -- Portrait border texture
     TextureFramePortraitBorderTexture = {
-        path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\Class-Circle-Cutout",
+        path = textures .. "\\UnitFrames\\Class-Circle-Cutout",
         size = { 63, 63 },
         coords = { 1, 0, 0, 1 },
         position = { point = "TOPLEFT", x = -5, y = 10 },
@@ -222,8 +249,9 @@ NicerFrames.frameLayouts["default"]["player"] = {
         }
     },
     TextureFrameStatusTexture = {
+        hidden = true,
         path = "Interface\\CharacterFrame\\UI-Player-Status",
-        size = { 193, 68 },
+        size = { 191, 67 },
         coords = { 0, 0.74609375, 0, 0.53125 },
         color = { 1, 1, 0 },
         position = {
@@ -233,6 +261,7 @@ NicerFrames.frameLayouts["default"]["player"] = {
         },
     },
     TextureFrameRestGlow = {
+        hidden = true,
         path = "Interface\\CharacterFrame\\UI-StateIcon",
         size = { 32, 32 },
         coords = { 0, 0.5, 0.5, 1.0 },
@@ -299,6 +328,82 @@ NicerFrames.frameLayouts["default"]["player"] = {
         coords = { 0.1875, 0.53125, 0, 1 },
         alpha = 0.3
     },
+    DruidBar = {
+        scale = 0.8,
+        size = { 40, 16 },
+        position = {
+            point = "TOPLEFT",
+            x = 74,
+            y = -52
+        },
+    },
+    DruidBarStatus = {
+        strata = "MEDIUM",
+        size = { 104, 12 },
+        position = { point = "TOPLEFT", x = 0, y = 0 },
+        barColor = { 0, 0, 1 },
+    },
+    DruidBarStatusText = {
+        inherits = "GameFontHighlightSmall",
+        -- size = { 42, 40 },
+        -- frameLevel = 1,
+        text = {
+            size = 8
+        },
+        position = {
+            point = "CENTER",
+            x = 1,
+            y = 0,
+        },
+    },
+    DruidBarStatusBackground = {
+        -- strata = "BACKGROUND",
+        color = { 0, 0, 0, 0.5 }
+    },
+    DruidBarParent = {
+        size = { 107, 12 },
+        position = {
+            point = "TOPLEFT",
+            x = -2,
+            y = 0
+        },
+    },
+    DruidBarParentLeft = {
+        path = "Interface\\CharacterFrame\\UI-CharacterFrame-GroupIndicator",
+        size = { 24, 16 },
+        position = {
+            x = -10,
+            point = "TOPLEFT"
+        },
+        coords = { 0, 0.1675, 1, 0 },
+        -- alpha = 0.3
+    },
+    DruidBarParentRight = {
+        path = "Interface\\CharacterFrame\\UI-CharacterFrame-GroupIndicator",
+        size = { 24, 16 },
+        position = {
+            x = 10,
+            point = "TOPRIGHT"
+        },
+        coords = { 0.53125, 0.71875, 1, 0 },
+        -- alpha = 0.3
+    },
+    DruidBarParentMiddle = {
+        path = "Interface\\CharacterFrame\\UI-CharacterFrame-GroupIndicator",
+        size = { 19, 16 },
+        position = {
+            point = "LEFT",
+            relativeTo = "PlayerFrameCustomDruidBarParentLeft",
+            relativePoint = "RIGHT"
+        },
+        position2 = {
+            point = "RIGHT",
+            relativeTo = "PlayerFrameCustomDruidBarParentRight",
+            relativePoint = "LEFT"
+        },
+        coords = { 0.1875, 0.53125, 1, 0 },
+        -- alpha = 0.3
+    }
 }
 
 NicerFrames.frameLayouts["default"]["player"]["DebugBackground"] = {
@@ -314,8 +419,7 @@ NicerFrames.frameLayouts["default"]["player"]["DebugBackground"] = {
         relativePoint = "TOPLEFT"
     }
 }
-
-local playerDefault = NicerFrames.frameLayouts["default"]["player"]
+-- local playerDefault = NicerFrames.frameLayouts["default"]["player"]
 
 NicerFrames.frameLayouts["default"]["target"] = {
     attributes = {
@@ -329,8 +433,8 @@ NicerFrames.frameLayouts["default"]["target"] = {
         point = "TOPLEFT",
         relativeTo = "UIParent",
         relativePoint = "TOPLEFT",
-        x = -19,
-        y = -4
+        x = 242,
+        y = -25,
     },
 
     -- Background texture (black bar behind name)
@@ -392,9 +496,9 @@ NicerFrames.frameLayouts["default"]["target"] = {
     -- Name text
     HealthBarNameText = {
         font = "GameFontNormalSmall",
-        position = { point = "TOP", x = 0, y = 13 },
+        position = { point = "TOP", x = 0, y = 14 },
         text = {
-            size = 9,
+            size = 10,
             font = "TextStatusBarText",
             color = { 0.99999780301005, 0.81960606575012, 0, 0.99999779462814 },
         },
@@ -426,11 +530,16 @@ NicerFrames.frameLayouts["default"]["target"] = {
     TextureFrameTexture = {
         path = "Interface\\TargetingFrame\\UI-TargetingFrame",
         coords = { 0, 1, 0, 1 },
-        position = { point = "TOPLEFT", x = -28, y = 23 }
+        position = { point = "TOPLEFT", x = -28, y = 23 },
+        classifications = {
+            elite =  "Interface\\TargetingFrame\\UI-TargetingFrame-Elite",
+            rare =  "Interface\\TargetingFrame\\UI-TargetingFrame-Rare",
+            rareelite =  "Interface\\TargetingFrame\\UI-TargetingFrame-Rare-Elite",
+        }
     },
     -- Circle texture
     TextureFramePortraitBorderTexture = {
-        path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\Class-Circle-Cutout",
+        path = textures .. "\\UnitFrames\\Class-Circle-Cutout",
         size = { 63, 63 },
         coords = { 0, 1, 0, 1 },
         position = { point = "TOPLEFT", x = 124, y = 10 },
@@ -442,14 +551,14 @@ NicerFrames.frameLayouts["default"]["target"] = {
         position = { point = "CENTER", x = 83, y = -19 }
     },
     -- Master Looter Icon
-    TextureFrameMasterLooterIcon = {
+    TextureFrameMasterIcon = {
         path = "Interface\\GroupFrame\\UI-Group-MasterLooter",
         size = { 13, 13 },
         position = {
-            x = 10,
+            x = -25,
             y = 14,
             point = "TOPLEFT",
-            relativePoint = "TOPLEFT"
+            relativePoint = "TOPRIGHT"
         }
     },
     -- Leader Icon
@@ -457,10 +566,10 @@ NicerFrames.frameLayouts["default"]["target"] = {
         path = "Interface\\GroupFrame\\UI-Group-LeaderIcon",
         size = { 16, 16 },
         position = {
-            x = -2,
+            x = -14,
             y = 15,
             point = "TOPLEFT",
-            relativePoint = "TOPLEFT"
+            relativePoint = "TOPRIGHT"
         }
     },
     -- CombatIcon
@@ -489,10 +598,10 @@ NicerFrames.frameLayouts["default"]["target"] = {
         path = "Interface\\TargetingFrame\\UI-PVP-FFA",
         size = { 50, 50 },
         position = {
-            x = -22,
+            x = -14,
             y = -3,
             point = "TOPLEFT",
-            relativePoint = "TOPLEFT"
+            relativePoint = "TOPRIGHT"
         }
     },
     TextureFrameRaidTargetIcon = {
@@ -506,13 +615,17 @@ NicerFrames.frameLayouts["default"]["target"] = {
         }
     },
 }
-
-local targetDefault = NicerFrames.frameLayouts["default"]["target"]
+-- local targetDefault = NicerFrames.frameLayouts["default"]["target"]
 
 NicerFrames.frameLayouts["default"]["pet"] = {
     -- Main frame
     size = { 114, 30 },
-    position = { point = "TOPLEFT", relativeTo = "UIParent", "BOTTOMLEFT", x = -19, y = -4 },
+    position = {
+        point = "TOPLEFT",
+        relativeTo = "PlayerFrameCustom",
+        "BOTTOMLEFT",
+        x = 34, y = -54,
+    },
     -- Background texture (black bar behind name)
     Background = {
         hidden = true,
@@ -534,13 +647,13 @@ NicerFrames.frameLayouts["default"]["pet"] = {
     },
     -- Name bar
     NameBar = {
+        hidden = true,
         size = { 119, 16 },
         position = { point = "TOPLEFT", x = 48, y = -1 },
         texture = {
             color = { r = 0, g = 0, b = 0, a = 0.5 }
         }
     },
-
     -- Health bar
     HealthBar = {
         frameLevel = 1,
@@ -550,8 +663,6 @@ NicerFrames.frameLayouts["default"]["pet"] = {
     },
     HealthBarTexture = {
         path = "Interface\\TargetingFrame\\UI-StatusBar",
-        -- barColor = { r = 0, g = 1, b = 0 },
-        -- color = { r = 0, g = 1, b = 0 },
     },
     HealthBarBackground = {
         color = { 0.33, 0.59, 0.33, 0.2 }
@@ -632,8 +743,7 @@ NicerFrames.frameLayouts["default"]["pet"] = {
         }
     },
 }
-
-local defaultPet = NicerFrames.frameLayouts["default"]["pet"]
+-- local defaultPet = NicerFrames.frameLayouts["default"]["pet"]
 
 NicerFrames.frameLayouts["default"]["targettarget"] = {
     attributes = {
@@ -646,8 +756,8 @@ NicerFrames.frameLayouts["default"]["targettarget"] = {
         point = "BOTTOMRIGHT",
         relativeTo = "TargetFrameCustom",
         relativePoint = "BOTTOMRIGHT",
-        x = -35,
-        y = -10,
+        x = 102,
+        y = -40,
     },
     Background = {
         size = { 46, 15 },
@@ -717,7 +827,7 @@ NicerFrames.frameLayouts["default"]["targettarget"] = {
         position = { point = "TOPLEFT", x = 0, y = 0 }
     },
     TextureFramePortraitBorderTexture = {
-        path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\Class-Circle",
+        path = textures .. "\\UnitFrames\\Class-Circle",
         size = { 41, 41 },
         coords = { 0, 1, 0, 1 },
         position = { point = "TOPLEFT", x = 2, y = -3 },
@@ -728,208 +838,149 @@ NicerFrames.frameLayouts["default"]["targettarget"] = {
         position = { point = "TOP", x = 0, y = 15 }
     },
 }
-defaultPet.NameBar.hidden = true
-
-local function updateLayoutValues(original, new)
-    for k, v in pairs(new) do
-        if type(v) == "table" and type(original[k]) == "table" then
-            updateLayoutValues(original[k], v)
-        else
-            original[k] = v
-        end
-    end
-end
-local function deepcopy(orig)
-    if type(orig) ~= 'table' then return orig end
-    local copy = {}
-    for k, v in pairs(orig) do
-        if type(v) == 'table' then
-            copy[k] = deepcopy(v)
-        else
-            copy[k] = v
-        end
-    end
-    return copy
-end
-
-local function createThickLayout(layoutType, unitType)
-    local defaultLayout = NicerFrames.frameLayouts["default"][unitType]
-    NicerFrames.frameLayouts[layoutType][unitType] = deepcopy(defaultLayout)
-    return NicerFrames.frameLayouts[layoutType][unitType]
-end
-
-local function PrintTable(tbl, indent)
-    indent = indent or ''
-    for k, v in pairs(tbl) do
-        if type(v) == 'table' then
-            print(indent .. tostring(k) .. ' = {')
-            PrintTable(v, indent .. '  ')
-            print(indent .. '}')
-        else
-            print(indent .. tostring(k) .. ' = ' .. tostring(v))
-        end
-    end
-end
 
 NicerFrames.frameLayouts["Thick"] = {}
 local thickPlayer = createThickLayout("Thick", "player")
-thickPlayer.TextureFrame = {
-    size = { 260, 124 },
-    position = { point = "CENTER", x = -11, y = -17 }
-}
-thickPlayer.TextureFrameTexture = {
-    coords = { 1, 0, 0, 1 },
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\UI-TargetingFrame-Light",
-}
+updateLayoutValues(thickPlayer.TextureFrameTexture, {
+    path = textures .. "\\UnitFrames\\UI-TargetingFrame-Light",
+    options = {
+        elite =  textures .. "\\UnitFrames\\UI-TargetingFrame-Elite-Light",
+        rare =  textures .. "\\UnitFrames\\UI-TargetingFrame-Rare-Light",
+        rareelite =  textures .. "\\UnitFrames\\UI-TargetingFrame-Rare-Elite-Light",
+    }
+})
 updateLayoutValues(thickPlayer.HealthBar, {
     size = { 119, 26 },
-    barColor = { 0, 1, 0 },
-    position = { x = 61, y = -2, point = "TOPLEFT" },
+    position = { x = 61, y = -1, point = "TOPLEFT" },
 })
--- updateLayoutValues(thickPlayer.HealthBarText, {
---     text = {
---         font = "GameFontNormal",
---         size = 9,
---         position = { x = 0, y = -5, point = "CENTER" }
---     }
--- })
-updateLayoutValues(thickPlayer.PortraitTexture, {
-    coords = { 1, 0, 0, 1 },
+updateLayoutValues(thickPlayer.HealthBarText, {
+    position = { x = 0, y = -13, point = "CENTER" }
 })
-
-thickPlayer.TextureFrameStatusTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\ui-targetingframe-flash",
-    size = { 247, 96 },
+updateLayoutValues(thickPlayer.PowerBarText, {
+    position = { x = 0, y = -5, point = "CENTER" }
+})
+updateLayoutValues(thickPlayer.TextureFrameStatusTexture, {
+    path = textures .. "\\UnitFrames\\ui-targetingframe-flash",
+    size = { 238, 96 },
     coords = { 1, 0.06, 0, 0.19 },
     color = { 1, 1, 0 },
     position = {
         point = "TOPLEFT",
-        x = -2,
-        y = 1
+        x = -45,
+        y = 22
     },
-}
-local function adjust(table, propertyName, value)
-    if type(value) == 'table' then
-        table[propertyName] = value
-    else
-        table[propertyName] = (table[propertyName] or 0) + value
-    end
-end
-
-local elements = {
-    "TextureFramePortraitBorderTexture",
-    "TextureFrameRestIcon",
-    "TextureFrameRestGlow",
-    "TextureFramePVPIcon",
-    "TextureFrameMasterIcon",
-    "TextureFrameLeaderIcon",
-}
-
-for _, element in ipairs(elements) do
-    adjust(thickPlayer[element].position, "y", -22)
-    adjust(thickPlayer[element].position, "x", 48)
-end
-adjust(thickPlayer.GroupIndicatorParent.position, "x", 8)
-adjust(thickPlayer.TextureFrameHitIndicator.position, "y", 15)
-adjust(thickPlayer.TextureFrameHitIndicator.position, "x", 10)
-adjust(thickPlayer.TextureFrameLevelText.position, "y", 17)
-adjust(thickPlayer.TextureFrameLevelText.position, "x", 10)
+})
 thickPlayer.Background.hidden = true
-NicerFrames.frameLayouts["Thick"]["player"].GroupIndicatorParent.scale = 0.7
+thickPlayer.GroupIndicatorParent.scale = 0.7
 NicerFrames.frameLayouts["Thick"]["player"] = thickPlayer
 
 local thickTarget = createThickLayout("Thick", "target")
-thickTarget.HealthBar = {
-    size = { 119, 26 },
-    barColor = { 0, 1, 0 },
-    position = { x = 3, y = -2, point = "TOPLEFT" },
-}
-updateLayoutValues(thickTarget.HealthBarText, {
-    text = {
-        font = "GameFontNormal",
-        size = 9,
-        position = { x = 0, y = -5, point = "CENTER" }
+updateLayoutValues(thickTarget.TextureFrameTexture, {
+    path = textures .. "\\UnitFrames\\UI-TargetingFrame-Light",
+    classifications = {
+        elite = textures .. "\\UnitFrames\\UI-TargetingFrame-Elite-Light",
+        rare = textures .. "\\UnitFrames\\UI-TargetingFrame-Rare-Light",
+        rareelite = textures .. "\\UnitFrames\\UI-TargetingFrame-Rare-Elite-Light",
     }
 })
-thickTarget.TextureFrame = {
-    size = { 260, 124 },
-    position = { point = "CENTER", x = 9, y = -17 }
-}
-thickTarget.TextureFrameTexture = {
-    coords = { 0, 1, 0, 1 },
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\UI-TargetingFrame-Light",
-}
-updateLayoutValues(thickTarget.PortraitTexture, {
-    coords = { 1, 0, 0, 1 },
+updateLayoutValues(thickTarget.HealthBar, {
+    size = { 119, 26 },
+    position = { x = 4, y = -1, point = "TOPLEFT" },
+})
+updateLayoutValues(thickTarget.PowerBarText, {
+    position = { x = 0, y = 1, point = "CENTER" }
 })
 thickTarget.NameBarTexture.hidden = true
-adjust(thickTarget.PowerBar.position, "x", -3)
-adjust(thickTarget.TextureFramePortraitBorderTexture.position, "x", 30)
-adjust(thickTarget.TextureFramePortraitBorderTexture.position, "y", -22)
-adjust(thickTarget.TextureFrameLevelText.position, "x", -6)
-adjust(thickTarget.TextureFrameLevelText.position, "y", 16)
-adjust(thickTarget.TextureFrameHitIndicator.position, "y", 15)
-adjust(thickTarget.TextureFrameHitIndicator.position, "x", -5)
 NicerFrames.frameLayouts["Thick"]["target"] = thickTarget
 
 local thickPet = createThickLayout("Thick", "pet")
-thickPet.PortraitTexture = {
-    size = { 33, 34 },
-    position = { point = "TOPLEFT", x = 3, y = -9 }
-}
-thickPet.HealthBar = {
-    frameLevel = 7,
-    size = { 69, 16 },
-    barColor = { 0, 1, 0 },
-    position = { x = 42, y = 2, point = "TOPLEFT" },
-}
-thickPet.TextureFrameTexture = {
-    size = { 153, 74 },
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\NoLevel-Thick-TargetingFrame",
-    coords = { 1, 0, 0, 1 },
-    position = { point = "TOPLEFT", x = -23, y = 9 },
-}
-updateLayoutValues(thickPet.PortraitTexture, {
-    coords = { 1, 0, 0, 1 },
-})
-thickPet.Background.hidden = true
-adjust(thickPet.HealthBar.position, "y", -7)
-adjust(thickPet.PowerBar.position, "y", -7)
-adjust(thickPet.HealthBarText.text, "size", -1)
-adjust(thickPet.PowerBarText.text, "size", -1)
-adjust(thickPet.HealthBarNameText.text, "size", -3)
-adjust(thickPet.HealthBarNameText.position, "y", -3)
-adjust(thickPet.PowerBar, "frameLevel", 7)
+-- updateLayoutValues(thickPet.position, {
+--     x = 30, y = -46, point = "TOPLEFT", relativeTo = "PlayerFrameCustom", relativePoint = "TOPLEFT",
+-- })
+-- thickPet.PortraitTexture = {
+--     size = { 33, 34 },
+--     position = { point = "TOPLEFT", x = 3, y = -9 }
+-- }
+-- thickPet.HealthBar = {
+--     frameLevel = 7,
+--     size = { 69, 16 },
+--     barColor = { 0, 1, 0 },
+--     position = { x = 42, y = 2, point = "TOPLEFT" },
+-- }
+-- thickPet.TextureFrameTexture = {
+--     size = { 153, 74 },
+--     path = textures .. "\\UnitFrames\\NoLevel-Thick-TargetingFrame",
+--     coords = { 1, 0, 0, 1 },
+--     position = { point = "TOPLEFT", x = -23, y = 9 },
+-- }
+-- updateLayoutValues(thickPet.PortraitTexture, {
+--     coords = { 1, 0, 0, 1 },
+-- })
+-- adjust(thickPet.HealthBar.position, "y", -7)
+-- adjust(thickPet.PowerBar.position, "y", -7)
+-- adjust(thickPet.HealthBarText.text, "size", -1)
+-- adjust(thickPet.PowerBarText.text, "size", -1)
+-- adjust(thickPet.HealthBarNameText.text, "size", -3)
+-- adjust(thickPet.HealthBarNameText.position, "y", -3)
+-- adjust(thickPet.PowerBar, "frameLevel", 7)
 NicerFrames.frameLayouts["Thick"]["pet"] = thickPet
+NicerFrames.frameLayouts["FlippedPet"] = {}
+local flippedPet = createThickLayout("FlippedPet", "pet")
+print(flippedPet.HealthBar.position.point)
+updateLayoutValues(flippedPet.HealthBar, {
+    -- size = { 89, 29 },
+    -- barColor = { 0, 1, 0 },
+    position = { x = 4, y = -15, point = "TOPLEFT" },
+})
+updateLayoutValues(flippedPet.PowerBar, {
+    -- size = { 89, 29 },
+    -- barColor = { 0, 1, 0 },
+    position = { x = 4, y = -23, point = "TOPLEFT" },
+})
+updateLayoutValues(flippedPet.TextureFrameTexture, {
+    path = "Interface\\TargetingFrame\\UI-TargetofTargetFrame",
+    size = { 93, 45 },
+    coords = { 0.7265625, 0.015625, 0.703125, 0 },
+    position = { point = "TOPLEFT", x = 0, y = 0 }
+})
+updateLayoutValues(flippedPet.TextureFrameTexture, {
+    path = "Interface\\TargetingFrame\\UI-TargetofTargetFrame",
+    size = { 93, 45 },
+    coords = { 0.7265625, 0.015625, 0.703125, 0 },
+    position = { point = "TOPLEFT", x = 0, y = 0 }
+})
+updateLayoutValues(flippedPet.PortraitTexture, {
+    position = { point = "TOPLEFT", x = 51, y = -13 }
+})
 
 local targettargetThick = createThickLayout("Thick", "targettarget")
-targettargetThick.PortraitTexture = {
-    size = { 29, 29 },
-    position = { point = "TOPLEFT", x = -4, y = 1 },
-    coords = { 1, 0, 0, 1 }
-}
-targettargetThick.TextureFrameTexture = {
-    size = { 126, 63 },
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\NoLevel-Thick-TargetingFrame",
-    coords = { 1, 0, 0, 1 },
-    position = { point = "TOPLEFT", x = -20, y = 0 },
-}
-targettargetThick.TextureFramePortraitBorderTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\Class-Circle",
-    size = { 32, 32 },
-    coords = { 0, 1, 0, 1 },
-    position = { point = "TOPLEFT", x = 1, y = -6 },
-    color = { 1.00, 0.96, 0.41 }
-}
-adjust(targettargetThick.HealthBar.position, "x", -11)
-adjust(targettargetThick.HealthBar.position, "y", 3)
-adjust(targettargetThick.HealthBar, "size", { 58, 14 })
-adjust(targettargetThick.PowerBar.position, "x", -11)
-adjust(targettargetThick.PowerBar.position, "y", -2)
-adjust(targettargetThick.PowerBar, "size", { 58, 8 })
-adjust(targettargetThick.HealthBarText.text, "size", -2)
-adjust(targettargetThick.PowerBarText.text, "size", -2)
-adjust(targettargetThick.PowerBarText.position, "y", 1)
+-- targettargetThick.PortraitTexture = {
+--     size = { 29, 29 },
+--     position = { point = "TOPLEFT", x = -4, y = 1 },
+--     coords = { 1, 0, 0, 1 }
+-- }
+-- targettargetThick.TextureFrameTexture = {
+--     size = { 126, 63 },
+--     path = textures .. "\\UnitFrames\\NoLevel-Thick-TargetingFrame",
+--     coords = { 1, 0, 0, 1 },
+--     position = { point = "TOPLEFT", x = -20, y = 0 },
+-- }
+-- targettargetThick.TextureFramePortraitBorderTexture = {
+--     path = textures .. "\\UnitFrames\\Class-Circle",
+--     size = { 32, 32 },
+--     coords = { 0, 1, 0, 1 },
+--     position = { point = "TOPLEFT", x = 1, y = -6 },
+--     color = { 1.00, 0.96, 0.41 }
+-- }
+-- adjust(targettargetThick.HealthBar.position, "x", -11)
+-- adjust(targettargetThick.HealthBar.position, "y", 3)
+-- adjust(targettargetThick.HealthBar, "size", { 58, 14 })
+-- adjust(targettargetThick.PowerBar.position, "x", -11)
+-- adjust(targettargetThick.PowerBar.position, "y", -2)
+-- adjust(targettargetThick.PowerBar, "size", { 58, 8 })
+-- adjust(targettargetThick.HealthBarText.text, "size", -2)
+-- adjust(targettargetThick.PowerBarText.text, "size", -2)
+-- adjust(targettargetThick.PowerBarText.position, "y", 1)
 NicerFrames.frameLayouts["Thick"]["targettarget"] = targettargetThick
 
 NicerFrames.frameLayouts["ArenaLive"] = {}
@@ -939,7 +990,7 @@ arenaLivePlayer.TextureFrame = {
     position = { point = "CENTER", x = -16, y = -2 }
 }
 arenaLivePlayer.TextureFrameTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\PetFrame",
+    path = textures .. "\\UnitFrames\\PetFrame",
     coords = { 0.1953125, 0.8125, 0.0625, 0.984375 }
 }
 arenaLivePlayer.HealthBar = {
@@ -958,14 +1009,14 @@ arenaLivePlayer.PortraitTexture = {
     coords = { 0.11, 0.89, 0.11, 0.89 }
 }
 arenaLivePlayer.TextureFramePortraitBorderTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\TargetingFrame-SquareBox",
+    path = textures .. "\\UnitFrames\\TargetingFrame-SquareBox",
     size = { 47, 37 },
     coords = { 1, 0, 0, 1 },
     position = { point = "TOPLEFT", x = 5, y = -4 },
     color = { 1, 1, 0 }
 }
 arenaLivePlayer.TextureFrameStatusTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\PetFrameFlash",
+    path = textures .. "\\UnitFrames\\PetFrameFlash",
     size = { 158, 49 },
     coords = { 0.1953125, 0.8125, 0.0625, 0.984375 },
     color = { 1, 1, 0 },
@@ -980,6 +1031,34 @@ updateLayoutValues(arenaLivePlayer.GroupIndicatorParentGroupIndicatorText, {
         size = 9,
     },
 })
+updateLayoutValues(arenaLivePlayer.DruidBar, {
+    position = {
+        point = "TOPLEFT",
+        x = 72,
+        y = -58
+    },
+})
+updateLayoutValues(arenaLivePlayer.TextureFrameRestIcon, {
+    size = { 20, 20 },
+    position = {
+        x = -5,
+        y = -30,
+        point = "TOPLEFT",
+        relativePoint = "TOPLEFT"
+    },
+})
+updateLayoutValues(arenaLivePlayer.TextureFrameRestGlow, {
+    size = { 21, 21 },
+    position = {
+        point = "TOPLEFT",
+        x = -5,
+        y = -32,
+    },
+})
+-- DruidBar = {
+--     scale = 0.8,
+--     size = { 40, 16 },
+-- },
 updateLayoutValues(arenaLivePlayer.GroupIndicatorParent, {
     position = {
         y = 10
@@ -987,7 +1066,6 @@ updateLayoutValues(arenaLivePlayer.GroupIndicatorParent, {
 })
 arenaLivePlayer.Background.hidden = true
 arenaLivePlayer.NameBar.hidden = true
-
 arenaLivePlayer.GroupIndicatorParent.scale = 0.7
 adjust(arenaLivePlayer.GroupIndicatorParent.position, "x", -30)
 adjust(arenaLivePlayer.TextureFrameLevelText.position, "x", 12)
@@ -999,16 +1077,13 @@ adjust(arenaLivePlayer.TextureFrameMasterIcon.position, "y", -8)
 adjust(arenaLivePlayer.TextureFrameHitIndicator.position, "x", 13)
 NicerFrames.frameLayouts["ArenaLive"]["player"] = arenaLivePlayer
 
-
-
-
 local arenaLiveTarget = createThickLayout("ArenaLive", "target")
 arenaLiveTarget.TextureFrame = {
     size = { 158, 49 },
     position = { point = "CENTER", x = 16, y = -2 }
 }
 arenaLiveTarget.TextureFrameTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\PetFrame",
+    path = textures .. "\\UnitFrames\\PetFrame",
     coords = { 0.8125, 0.1953125, 0.0625, 0.984375 }
 }
 arenaLiveTarget.PortraitTexture = {
@@ -1027,7 +1102,7 @@ arenaLiveTarget.PowerBar = {
     position = { x = 37, y = -33, point = "TOPLEFT" },
 }
 arenaLiveTarget.TextureFramePortraitBorderTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\TargetingFrame-SquareBox",
+    path = textures .. "\\UnitFrames\\TargetingFrame-SquareBox",
     size = { 47, 37 },
     coords = { 1, 0, 0, 1 },
     position = { point = "TOPLEFT", x = 106, y = -4 },
@@ -1040,19 +1115,13 @@ adjust(arenaLiveTarget.TextureFrameLevelText.position, "x", -10)
 adjust(arenaLiveTarget.TextureFrameHitIndicator.position, "x", -8)
 NicerFrames.frameLayouts["ArenaLive"]["target"] = arenaLiveTarget
 
-
-
-
-
-
-
 local arenaLivePet = createThickLayout("ArenaLive", "pet")
 arenaLivePet.TextureFrame = {
     size = { 90, 26 },
     position = { point = "CENTER", x = -13, y = -1 },
 }
 arenaLivePet.TextureFrameTexture = {
-    path = "Interface\\AddOns\\NicerFrames\\Textures\\UnitFrames\\PetFrame",
+    path = textures .. "\\UnitFrames\\PetFrame",
     coords = { 0.1953125, 0.8125, 0.0625, 0.984375 },
 }
 arenaLivePet.PortraitTexture = {
@@ -1077,11 +1146,6 @@ arenaLivePet.PowerBar = {
 }
 arenaLivePet.Background.hidden = true
 NicerFrames.frameLayouts["ArenaLive"]["pet"] = arenaLivePet
-
-
-
-
-
 
 local arenaLiveTargetTarget = createThickLayout("ArenaLive", "targettarget")
 arenaLiveTargetTarget.TextureFrame = {

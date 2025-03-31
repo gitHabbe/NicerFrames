@@ -4,4 +4,6 @@
     <Include file="PlayerFrameCustom.xml" />
     <Include file="Database.lua" />
     <Include file="Config.lua" />
+    <Include file="Values.lua" />
+    <Include file="Layout.lua" />
 </Ui>

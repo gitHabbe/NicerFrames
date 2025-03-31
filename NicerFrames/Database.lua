@@ -214,17 +214,11 @@ function NicerFrames:OnProfileChanged(event, database, newProfileKey)
 end
 
 defaults["profile"] = {
-    unitFrameStyle = "Default",
+    unitFrameStyle = "default",
     barTexture = "Blizzard",
     fontFamily = "Friz Quadrata TT",
     frameBorder = "Normal",
     customPlayerName = "",
-    playerX = 0,
-    playerY = 0,
-    targetX = 0,
-    targetY = 0,
-    petX = 0,
-    petY = 0,
     portraitBorder = false,
     invertTargetPortrait = false,
     nameColor = false,
@@ -235,7 +229,7 @@ defaults["profile"] = {
         b = 1,
         a = 1
     },
-    healthFormat = "!CURR/ !MAX (!PERC%)",
+    healthFormat = "!CURR / !MAX (!PERC%)",
     manaFormat = "!CURR / !MAX (!PERC%)",
     energyFormat = "!CURR / !MAX",
     playerNameBar = {
@@ -256,6 +250,11 @@ defaults["profile"] = {
     alwaysShowStatusText = false,
     hideFullStatusTexts = false,
     centerFrames = false,
+    alternativePet = false,
+    hideDruidBar = false,
+    hideCombatText = false,
+    hideRestGlow = false,
+    hideDefaultCastBar = false,
 }
 
 Options["args"] = {}
@@ -301,7 +300,7 @@ Options["args"]["General"]["args"] = {
         type = "select",
         name = "Frame border",
         values = function()
-            if NicerFrames.db.profile.unitFrameStyle == "Default" then
+            if NicerFrames.db.profile.unitFrameStyle == "Default" or NicerFrames.db.profile.unitFrameStyle == "Thick" then
                 return {
                     Normal = "Normal",
                     Rare = "Rare",
@@ -466,6 +465,32 @@ Options["args"]["General"]["args"] = {
         step = 0.05,
         refresh = true,
     }),
+    alternativePet = profileOption({
+        type = "toggle",
+        name = "Alternative Pet style",
+        refresh = true,
+    }),
+    hideDruidBar = profileOption({
+        type = "toggle",
+        name = "Hide Druid Bar",
+        refresh = true,
+    }),
+    hideCombatText = profileOption({
+        type = "toggle",
+        name = "Hide portrait combat text",
+        refresh = true,
+    }),
+    hideRestGlow = profileOption({
+        type = "toggle",
+        name = "Hide rest glow",
+        refresh = true,
+    }),
+    hideDefaultCastBar = profileOption({
+        type = "toggle",
+        name = "Hide default cast bar",
+        desc = "Requires reload",
+        refresh = true,
+    })
 }
 
 Options["args"]["Frame specific"] = {
